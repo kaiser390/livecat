@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #484f58;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-blue: #58a6ff;
+            --accent-purple: #bc8cff;
+            --accent-orange: #f0883e;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* --- Header --- */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .connection-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .badge-connected {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+        }
+
+        .badge-disconnected {
+            background: rgba(248, 81, 73, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* --- Main Layout --- */
+        .main {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 0;
+            min-height: calc(100vh - 50px);
+        }
+
+        .content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        /* --- Camera Split View --- */
+        .camera-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .camera-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .camera-card.active {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 0 1px var(--accent-green);
+        }
+
+        .camera-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+        }
+
+        .camera-name {
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.tracking {
+            background: var(--accent-green);
+            box-shadow: 0 0 6px var(--accent-green);
+        }
+
+        .status-dot.searching {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 6px var(--accent-yellow);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.offline {
+            background: var(--accent-red);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .camera-score {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .camera-score span {
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .camera-viewport {
+            background: #000;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            position: relative;
+        }
+
+        .camera-viewport .no-signal {
+            text-align: center;
+        }
+
+        .camera-viewport .active-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--accent-green);
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+
+        .camera-footer {
+            padding: 6px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* --- Info Cards --- */
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+
+        .info-card .label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .info-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .info-card .sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .value.green { color: var(--accent-green); }
+        .value.yellow { color: var(--accent-yellow); }
+        .value.red { color: var(--accent-red); }
+        .value.blue { color: var(--accent-blue); }
+        .value.purple { color: var(--accent-purple); }
+
+        /* --- Controls --- */
+        .controls-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: var(--border-color);
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: rgba(88, 166, 255, 0.15);
+            border-color: rgba(88, 166, 255, 0.3);
+            color: var(--accent-blue);
+        }
+
+        .btn-primary:hover {
+            background: rgba(88, 166, 255, 0.25);
+        }
+
+        .btn-danger {
+            background: rgba(248, 81, 73, 0.15);
+            border-color: rgba(248, 81, 73, 0.3);
+            color: var(--accent-red);
+        }
+
+        .btn-danger:hover {
+            background: rgba(248, 81, 73, 0.25);
+        }
+
+        .btn-success {
+            background: rgba(63, 185, 80, 0.15);
+            border-color: rgba(63, 185, 80, 0.3);
+            color: var(--accent-green);
+        }
+
+        .btn-success:hover {
+            background: rgba(63, 185, 80, 0.25);
+        }
+
+        /* --- Blur Toggle --- */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .toggle {
+            width: 36px;
+            height: 20px;
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .toggle::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle.active::after {
+            transform: translateX(16px);
+        }
+
+        .toggle-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* --- Events List --- */
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .event-type {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .event-type-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .event-type-badge.interact { background: rgba(188, 140, 255, 0.2); color: var(--accent-purple); }
+        .event-type-badge.climb { background: rgba(240, 136, 62, 0.2); color: var(--accent-orange); }
+        .event-type-badge.jump { background: rgba(88, 166, 255, 0.2); color: var(--accent-blue); }
+        .event-type-badge.hunt { background: rgba(248, 81, 73, 0.2); color: var(--accent-red); }
+        .event-type-badge.run { background: rgba(63, 185, 80, 0.2); color: var(--accent-green); }
+        .event-type-badge.sleep { background: rgba(139, 148, 158, 0.2); color: var(--text-secondary); }
+
+        .event-time {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .event-score {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        /* --- Upload Queue --- */
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .queue-platform {
+            font-weight: 600;
+            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+
+        .queue-platform.youtube {
+            background: rgba(248, 81, 73, 0.15);
+            color: #ff4444;
+        }
+
+        .queue-platform.tiktok {
+            background: rgba(88, 166, 255, 0.15);
+            color: var(--accent-blue);
+        }
+
+        .queue-status {
+            font-size: 11px;
+        }
+
+        .queue-status.pending { color: var(--accent-yellow); }
+        .queue-status.uploading { color: var(--accent-blue); }
+        .queue-status.done { color: var(--accent-green); }
+        .queue-status.failed { color: var(--accent-red); }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 8px 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 1024px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .camera-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <div class="header-left">
+        <h1>{{ title }}</h1>
+        <span id="ws-badge" class="connection-badge badge-disconnected">Disconnected</span>
+    </div>
+    <div class="header-right">
+        <span id="server-running">Server: --</span>
+        <span id="uptime">Uptime: --</span>
+        <span id="clock"></span>
+    </div>
+</header>
+
+<!-- Main -->
+<div class="main">
+    <!-- Content Area -->
+    <div class="content">
+
+        <!-- Camera Split View -->
+        <div class="camera-grid">
+            {% for cam_id, cam in cameras.items() %}
+            <div class="camera-card" id="cam-card-{{ cam_id }}" data-cam-id="{{ cam_id }}">
+                <div class="camera-header">
+                    <div class="camera-name">
+                        <span class="status-dot offline" id="status-dot-{{ cam_id }}"></span>
+                        {{ cam.name }} ({{ cam_id }})
+                    </div>
+                    <div class="camera-score">
+                        Score: <span id="score-{{ cam_id }}">0</span>
+                    </div>
+                </div>
+                <div class="camera-viewport">
+                    <div class="no-signal" id="no-signal-{{ cam_id }}">No Signal</div>
+                    <div class="active-badge" id="active-badge-{{ cam_id }}" style="display:none">LIVE</div>
+                </div>
+                <div class="camera-footer">
+                    <span id="tracking-state-{{ cam_id }}">--</span>
+                    <button class="btn btn-primary" onclick="switchCamera('{{ cam_id }}')">Switch</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Info Cards -->
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="label">Active Camera</div>
+                <div class="value blue" id="active-camera">--</div>
+                <div class="sub" id="active-camera-name"></div>
+            </div>
+            <div class="info-card">
+                <div class="label">Clips Today</div>
+                <div class="value green" id="clips-today">0</div>
+                <div class="sub">highlights captured</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Upload Queue</div>
+                <div class="value purple" id="upload-queue">0</div>
+                <div class="sub">pending uploads</div>
+            </div>
+            <div class="info-card">
+                <div class="label">Blur Status</div>
+                <div class="value" id="blur-status">--</div>
+                <div class="sub" id="blur-sub">hunt protection</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+        <!-- Quick Controls -->
+        <div class="controls-section">
+            <div class="section-title">Quick Controls</div>
+            <div class="controls-row">
+                {% for cam_id, cam in cameras.items() %}
+                <button class="btn btn-primary" onclick="switchCamera('{{ cam_id }}')">
+                    {{ cam.name }}
+                </button>
+                {% endfor %}
+            </div>
+            <div class="toggle-wrapper">
+                <div class="toggle" id="blur-toggle" onclick="toggleBlur()"></div>
+                <span class="toggle-label">Hunt Blur Protection</span>
+            </div>
+            <div class="controls-row" style="margin-top: 8px;">
+                <button class="btn btn-success" onclick="saveClip()">Save Clip</button>
+            </div>
+        </div>
+
+        <!-- Recent Events -->
+        <div>
+            <div class="section-title">Recent Events</div>
+            <div class="events-list" id="events-list">
+                <div class="event-item">
+                    <span class="event-type">
+                        <span class="event-type-badge sleep">--</span>
+                    </span>
+                    <span class="event-time">Waiting for events...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Queue -->
+        <div>
+            <div class="section-title">Upload Queue</div>
+            <div id="queue-list">
+                <div class="queue-item">
+                    <span style="color: var(--text-muted);">Queue empty</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Stats -->
+        <div>
+            <div class="section-title">Today's Uploads</div>
+            <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="info-card">
+                    <div class="label">YouTube</div>
+                    <div class="value red" id="yt-uploads">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="label">TikTok</div>
+                    <div class="value blue" id="tt-uploads">0</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+    LiveCat v0.1.0 &middot; 2-Camera Cat Tracking &amp; Content Automation System
+</div>
+
+<script>
+    // --- WebSocket ---
+    let ws = null;
+    let wsRetries = 0;
+    const maxWsRetries = 50;
+    let startTime = Date.now();
+
+    function connectWS() {
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+        ws.onopen = function() {
+            wsRetries = 0;
+            document.getElementById('ws-badge').className = 'connection-badge badge-connected';
+            document.getElementById('ws-badge').textContent = 'Connected';
+        };
+
+        ws.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                updateDashboard(data);
+            } catch (e) {
+                console.error('Failed to parse WS message:', e);
+            }
+        };
+
+        ws.onclose = function() {
+            document.getElementById('ws-badge').className = 'connection-badge badge-disconnected';
+            document.getElementById('ws-badge').textContent = 'Disconnected';
+
+            if (wsRetries < maxWsRetries) {
+                wsRetries++;
+                const delay = Math.min(1000 * Math.pow(1.5, wsRetries), 30000);
+                setTimeout(connectWS, delay);
+            }
+        };
+
+        ws.onerror = function() {
+            ws.close();
+        };
+    }
+
+    // --- Update Dashboard ---
+    function updateDashboard(data) {
+        // Server status
+        const running = data.running;
+        const serverEl = document.getElementById('server-running');
+        serverEl.textContent = running ? 'Server: Running' : 'Server: Stopped';
+        serverEl.style.color = running ? 'var(--accent-green)' : 'var(--accent-red)';
+
+        // Active camera
+        const activeCam = data.active_camera || '--';
+        document.getElementById('active-camera').textContent = activeCam;
+
+        // Clips today
+        document.getElementById('clips-today').textContent = data.clips_today || 0;
+
+        // Upload queue
+        document.getElementById('upload-queue').textContent = data.upload_queue || 0;
+
+        // Blur status
+        const blurActive = data.blur_active;
+        const blurEl = document.getElementById('blur-status');
+        blurEl.textContent = blurActive ? 'ON' : 'OFF';
+        blurEl.className = 'value ' + (blurActive ? 'green' : 'red');
+
+        const blurToggle = document.getElementById('blur-toggle');
+        if (blurActive) {
+            blurToggle.classList.add('active');
+        } else {
+            blurToggle.classList.remove('active');
+        }
+
+        // Camera cards
+        const cameras = data.cameras || {};
+        for (const [camId, cam] of Object.entries(cameras)) {
+            const card = document.getElementById(`cam-card-${camId}`);
+            const dot = document.getElementById(`status-dot-${camId}`);
+            const score = document.getElementById(`score-${camId}`);
+            const badge = document.getElementById(`active-badge-${camId}`);
+            const trackingState = document.getElementById(`tracking-state-${camId}`);
+
+            if (!card) continue;
+
+            // Active indicator
+            if (camId === activeCam) {
+                card.classList.add('active');
+                if (badge) badge.style.display = 'block';
+            } else {
+                card.classList.remove('active');
+                if (badge) badge.style.display = 'none';
+            }
+
+            // Status dot
+            if (dot) {
+                dot.className = 'status-dot';
+                if (!cam.connected) {
+                    dot.classList.add('offline');
+                } else if (cam.tracking_state === 'tracking') {
+                    dot.classList.add('tracking');
+                } else {
+                    dot.classList.add('searching');
+                }
+            }
+
+            // Score
+            if (score) {
+                const s = Math.round(cam.activity_score || 0);
+                score.textContent = s;
+                if (s >= 70) score.style.color = 'var(--accent-green)';
+                else if (s >= 30) score.style.color = 'var(--accent-yellow)';
+                else score.style.color = 'var(--text-secondary)';
+            }
+
+            // Tracking state
+            if (trackingState) {
+                if (!cam.connected) {
+                    trackingState.textContent = 'Offline';
+                    trackingState.style.color = 'var(--accent-red)';
+                } else if (cam.tracking_state === 'tracking') {
+                    trackingState.textContent = 'Tracking';
+                    trackingState.style.color = 'var(--accent-green)';
+                } else {
+                    trackingState.textContent = 'Searching...';
+                    trackingState.style.color = 'var(--accent-yellow)';
+                }
+            }
+        }
+    }
+
+    // --- API Calls ---
+    async function switchCamera(camId) {
+        try {
+            const resp = await fetch('/api/camera/switch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ camera_id: camId })
+            });
+            const data = await resp.json();
+            if (!data.success) {
+                console.error('Camera switch failed:', data.message || data.detail);
+            }
+        } catch (e) {
+            console.error('Camera switch error:', e);
+        }
+    }
+
+    async function toggleBlur() {
+        try {
+            const resp = await fetch('/api/blur/toggle', { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                const toggle = document.getElementById('blur-toggle');
+                if (data.blur_active) {
+                    toggle.classList.add('active');
+                } else {
+                    toggle.classList.remove('active');
+                }
+            }
+        } catch (e) {
+            console.error('Blur toggle error:', e);
+        }
+    }
+
+    async function saveClip() {
+        try {
+            const resp = await fetch('/api/clip/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await resp.json();
+            if (data.success) {
+                addEvent('manual', data.message || 'Clip saved', 0);
+            } else {
+                console.error('Clip save failed:', data.message);
+            }
+        } catch (e) {
+            console.error('Clip save error:', e);
+        }
+    }
+
+    // --- Event List ---
+    function addEvent(type, text, score) {
+        const list = document.getElementById('events-list');
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        const badgeClass = type.includes('interact') ? 'interact' :
+                           type.includes('climb') ? 'climb' :
+                           type.includes('jump') ? 'jump' :
+                           type.includes('hunt') ? 'hunt' :
+                           type.includes('run') ? 'run' : 'sleep';
+
+        const item = document.createElement('div');
+        item.className = 'event-item';
+        item.innerHTML = `
+            <span class="event-type">
+                <span class="event-type-badge ${badgeClass}">${type}</span>
+                ${text}
+            </span>
+            <span>
+                <span class="event-score">${score > 0 ? score.toFixed(0) : ''}</span>
+                <span class="event-time">${timeStr}</span>
+            </span>
+        `;
+
+        list.insertBefore(item, list.firstChild);
+
+        // 최대 10개 유지
+        while (list.children.length > 10) {
+            list.removeChild(list.lastChild);
+        }
+    }
+
+    // --- Upload Stats Polling ---
+    async function fetchUploadStats() {
+        try {
+            const resp = await fetch('/api/uploads');
+            const data = await resp.json();
+            if (data.stats) {
+                document.getElementById('yt-uploads').textContent =
+                    (data.stats.youtube ? data.stats.youtube.success : 0);
+                document.getElementById('tt-uploads').textContent =
+                    (data.stats.tiktok ? data.stats.tiktok.success : 0);
+            }
+        } catch (e) {
+            // silent
+        }
+    }
+
+    // --- Clock ---
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').textContent =
+            now.toLocaleString('ko-KR', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+
+        // Uptime
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const h = Math.floor(elapsed / 3600);
+        const m = Math.floor((elapsed % 3600) / 60);
+        const s = elapsed % 60;
+        document.getElementById('uptime').textContent =
+            `Uptime: ${h}h ${m}m ${s}s`;
+    }
+
+    // --- Fallback Polling (if WebSocket fails) ---
+    async function pollStatus() {
+        if (ws && ws.readyState === WebSocket.OPEN) return;
+
+        try {
+            const resp = await fetch('/api/status');
+            const data = await resp.json();
+            updateDashboard(data);
+        } catch (e) {
+            // silent
+        }
+    }
+
+    // --- Init ---
+    connectWS();
+    updateClock();
+    setInterval(updateClock, 1000);
+    setInterval(pollStatus, 2000);
+    setInterval(fetchUploadStats, 30000);
+    fetchUploadStats();
+</script>
+
+</body>
+</html>

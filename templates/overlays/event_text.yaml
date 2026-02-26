@@ -1,0 +1,19 @@
+# LiveCat - Event Text Overlay Configuration
+# ===========================================
+# Displays event keyword text at the top of the video frame.
+# Used by: server/producer/template_applier.py
+# Spec: DEVSPEC.md section 9.1
+
+event_text:
+  position: "top_center"
+  margin_top: 80
+  font: "NanumSquareRoundEB.ttf"    # Korean bold font
+  size: 48
+  color: "#FFFFFF"
+  stroke_color: "#000000"
+  stroke_width: 3
+  shadow:
+    offset: [2, 2]
+    color: "#00000080"
+  animation: "fade_in"               # 0.3s fade in
+  duration: "full"                    # Full clip duration

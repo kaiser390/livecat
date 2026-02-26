@@ -1,0 +1,39 @@
+# LiveCat - BGM Configuration
+# ============================
+# Event-to-mood mapping, mixing settings, and selection rules.
+# Used by: server/producer/bgm_mixer.py
+# Spec: DEVSPEC.md section 9.2
+#
+# BGM directory structure:
+#   bgm/active/   - Energetic tracks (running, jumping, climbing)
+#   bgm/healing/  - Calm tracks (sleeping, grooming, sunbathing)
+#   bgm/comic/    - Funny tracks (fails, surprises, interactions)
+#   bgm/tension/  - Suspenseful tracks (hunting, standoffs)
+
+# Event -> Mood mapping
+event_mood_map:
+  climb: "active"
+  jump: "active"
+  run: "active"
+  interact: "comic"
+  hunt_attempt: "tension"
+  sleep: "healing"
+  groom: "healing"
+  sunbathe: "healing"
+  fail: "comic"
+  surprise: "comic"
+  standoff: "tension"
+
+# Mixing settings
+mixing:
+  bgm_volume: 0.15
+  original_volume: 0.85
+  fade_in_sec: 1.0
+  fade_out_sec: 1.5
+  random_start: true             # Randomize BGM start position
+  crossfade_overlap_sec: 0.5     # Crossfade during intro/outro transitions
+
+# Selection rules
+selection:
+  avoid_repeat_count: 3          # Avoid BGM used in last 3 videos
+  prefer_shorter: true           # Prefer BGM shorter than clip (avoid looping)

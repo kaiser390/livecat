@@ -1,0 +1,53 @@
+# LiveCat Server Dependencies
+# ============================
+
+# Core
+fastapi>=0.109
+uvicorn[standard]>=0.27
+websockets>=12.0
+pyyaml>=6.0
+python-dotenv>=1.0
+
+# Video Processing
+opencv-python>=4.9
+Pillow>=10.0
+moviepy>=2.0
+
+# AI/ML
+ultralytics>=8.1
+torch>=2.1
+torchvision>=0.16
+
+# NDI
+ndi-python>=5.5
+
+# OBS
+obsws-python>=1.7
+
+# YouTube API
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.2
+google-auth-httplib2>=0.2
+
+# Claude API (LLM)
+anthropic>=0.40
+
+# Scheduling
+apscheduler>=3.10
+
+# HTTP
+requests>=2.31
+httpx>=0.26
+
+# Utils
+loguru>=0.7
+diskcache>=5.6
+numpy>=1.26
+aiofiles>=23.2
+
+# Web Dashboard
+jinja2>=3.1
+
+# Testing
+pytest>=8.0
+pytest-asyncio>=0.23

@@ -1,0 +1,18 @@
+# LiveCat - Transition Effects Configuration
+# ============================================
+# Defines transition effects between video segments.
+# Used by: server/producer/template_applier.py, server/director/transition_engine.py
+# Spec: DEVSPEC.md section 9.1
+
+transitions:
+  intro_to_main:
+    type: "crossfade"
+    duration_ms: 300
+
+  main_to_outro:
+    type: "crossfade"
+    duration_ms: 500
+
+  between_clips:                    # When combining multiple clips
+    type: "swipe_left"
+    duration_ms: 400

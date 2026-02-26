@@ -1,0 +1,53 @@
+# Environment & Secrets
+.env
+config/credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Media (large files)
+clips/
+output/
+thumbnails/
+uploads/
+bgm/active/*.mp3
+bgm/healing/*.mp3
+bgm/comic/*.mp3
+bgm/tension/*.mp3
+
+# Buffer
+clips/_buffer/
+
+# Models (large)
+models/*.pt
+models/*.onnx
+*.pt
+
+# Installers & binaries
+*.exe
+*.zip
+*.msi
+
+# Test media (large)
+tests/*.mp4
+tests/*.jpg
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/

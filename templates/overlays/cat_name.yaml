@@ -1,0 +1,20 @@
+# LiveCat - Cat Name Badge Overlay Configuration
+# ================================================
+# Displays cat name badge with icon at the bottom-left of the frame.
+# Used by: server/producer/template_applier.py, server/obs/overlay_manager.py
+# Spec: DEVSPEC.md section 9.1
+
+cat_name:
+  position: "bottom_left"
+  margin_bottom: 120
+  margin_left: 40
+  font: "NanumSquareRoundB.ttf"
+  size: 36
+  color: "#FFFFFF"
+  background:
+    color: "#00000060"               # Semi-transparent black
+    padding: [8, 16]
+    border_radius: 12
+  icons:
+    nana: "\U0001F431"               # Cat face emoji
+    toto: "\U0001F408\u200D\u2B1B"   # Black cat emoji

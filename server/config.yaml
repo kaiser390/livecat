@@ -1,0 +1,226 @@
+# LiveCat Server Configuration
+# ===========================
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
+  log_level: "INFO"
+
+# --- Camera & SRT ---
+camera:
+  count: 2
+  resolution: "720p"
+  fps: 30
+  protocol: "srt"
+  cameras:
+    - id: "CAM-1"
+      name: "나나 추적"
+      srt_port: 9000
+      role: "tracking_nana"
+    - id: "CAM-2"
+      name: "토토 추적/전경"
+      srt_port: 9001
+      role: "tracking_toto"
+
+# --- AI Camera Switching ---
+switching:
+  min_hold_sec: 8
+  score_threshold_multiplier: 1.5
+  tracking_lost_timeout_sec: 3
+  sleep_mode_threshold: 10
+  sleep_mode_delay_sec: 300
+  pip_mode_both_active_threshold: 50
+  transition:
+    crossfade_duration_ms: 500
+    cut_duration_ms: 0
+    pip_main_ratio: 0.7
+    pip_sub_ratio: 0.3
+
+# --- Hunt Blur ---
+blur:
+  enabled: true
+  model_path: "models/hunt_detector.pt"
+  confidence_threshold: 0.3
+  aggressive_blur_threshold: 0.7
+  prey_classes: ["mouse", "bird", "lizard"]
+  blur_kernels:
+    level_0: [31, 31]    # prey only
+    level_1: [61, 61]    # mouth area
+    level_2: [101, 101]  # full scene
+  bbox_expand_margin: 1.5
+  feather_radius: 20
+
+# --- Streaming (YouTube Live) ---
+streaming:
+  platform: "youtube"
+  rtmp_url: "rtmp://a.rtmp.youtube.com/live2"
+  # stream_key는 .env의 YOUTUBE_STREAM_KEY로 관리
+  video:
+    resolution: "720p"
+    bitrate: 2500        # kbps
+    preset: "veryfast"
+    keyframe_interval: 2  # 초 (GOP = fps * interval)
+  audio:
+    bitrate: 128          # kbps
+    sample_rate: 44100
+
+# --- OBS ---
+obs:
+  ws_url: "ws://localhost:4455"
+  scenes:
+    main: "MainView"
+    pip: "PIP_Mode"
+    sleeping: "Sleeping"
+    offline: "Offline"
+
+# --- Highlight Clipper ---
+clip:
+  pre_event_sec: 5
+  post_event_sec: 15
+  total_duration_sec: 20
+  rolling_buffer_sec: 60
+  rolling_buffer_segment_sec: 10
+  rolling_buffer_dir: "clips/_buffer"
+  output_dir: "clips"
+  daily_top_n: 10
+  events:
+    climb:
+      base_score: 80
+      min_duration_sec: 2
+    jump:
+      base_score: 70
+    run:
+      base_score: 60
+      min_speed: 50
+      min_duration_sec: 1
+    interact:
+      base_score: 90
+      min_distance: 0.3
+    hunt_attempt:
+      base_score: 85
+  scoring_weights:
+    event: 0.40
+    clarity: 0.20
+    composition: 0.15
+    novelty: 0.15
+    cat_bonus: 0.10
+
+# --- Short-form Producer ---
+shortform:
+  output_resolution: [1080, 1920]
+  intro_duration_sec: 1.5
+  outro_duration_sec: 2.0
+  smart_crop:
+    target_ratio: [9, 16]
+    cat_detector: "yolov8n"
+    smoothing_factor: 0.85
+    padding_ratio: 1.3
+    fallback: "center_crop"
+  speed:
+    slowmo_factor: 0.5
+    timelapse_factor: 2.0
+    sleep_timelapse_factor: 4.0
+
+# --- BGM ---
+bgm:
+  volume_bgm: 0.15
+  volume_original: 0.85
+  fade_in_sec: 1.0
+  fade_out_sec: 1.5
+  random_start: true
+  avoid_repeat_count: 3
+  base_dir: "bgm"
+
+# --- Thumbnail ---
+thumbnail:
+  youtube_size: [1280, 720]
+  tiktok_size: [1080, 1920]
+  quality: 95
+  sample_interval: 10
+  clarity_threshold: 50.0
+  weights:
+    clarity: 0.30
+    pose_attractiveness: 0.40
+    composition: 0.30
+  prefer_both_cats_bonus: 20
+  font: "NanumSquareRoundEB.ttf"
+  templates:
+    - id: "A"
+      name: "Bold"
+      text_position: "center"
+      text_size: 72
+      text_stroke: 4
+      background_darken: 0.3
+    - id: "B"
+      name: "Minimal"
+      text_position: "bottom_left"
+      text_size: 48
+      text_stroke: 2
+      background_darken: 0.0
+    - id: "C"
+      name: "Frame"
+      text_position: "top_center"
+      text_size: 56
+      text_stroke: 3
+      frame_color: "#FF6B35"
+      frame_width: 12
+
+# --- Title/Description (LLM) ---
+llm:
+  model: "claude-haiku-4-5-20251001"
+  max_tokens: 500
+  title_candidates: 5
+  prompts_dir: "config/prompts"
+
+# --- Upload ---
+upload:
+  youtube:
+    category_id: 15               # Pets & Animals
+    privacy_status: "public"
+    made_for_kids: false
+    default_language: "ko"
+    daily_quota: 10000
+    upload_cost: 1600
+    thumbnail_cost: 50
+    max_uploads_per_day: 6
+  tiktok:
+    privacy_level: "PUBLIC_TO_EVERYONE"
+    disable_duet: false
+    disable_comment: false
+  scheduler:
+    optimal_hours_kst: [18, 19, 20, 21, 22]
+    daily_shorts: 3
+    daily_tiktok: 3
+    min_interval_hours: 2
+    max_retry: 3
+  priority_order:
+    - "interact"
+    - "climb"
+    - "jump"
+    - "hunt_attempt"
+    - "run"
+    - "sleep"
+
+# --- Cat Profiles ---
+cats:
+  nana:
+    name_ko: "나나"
+    name_en: "Nana"
+    pattern: "tabby"
+    icon: "🐱"
+    hashtags_ko: ["#나나", "#호랑이고양이", "#태비"]
+    hashtags_en: ["#nana", "#tabbycat"]
+  toto:
+    name_ko: "토토"
+    name_en: "Toto"
+    pattern: "tuxedo"
+    icon: "🐈‍⬛"
+    hashtags_ko: ["#토토", "#턱시도고양이"]
+    hashtags_en: ["#toto", "#tuxedocat"]
+
+# --- Web Dashboard ---
+web:
+  host: "0.0.0.0"
+  port: 8080
+  title: "LiveCat Dashboard"

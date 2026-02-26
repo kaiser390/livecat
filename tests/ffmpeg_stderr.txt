@@ -1,0 +1,7 @@
+[vost#0:0/rawvideo @ 00000206aa55b740] Error submitting a packet to the muxer: Invalid argument
+    Last message repeated 1 times
+[out#0/rawvideo @ 00000206a9694cc0] Error muxing a packet
+[out#0/rawvideo @ 00000206a9694cc0] Task finished with error code: -22 (Invalid argument)
+[out#0/rawvideo @ 00000206a9694cc0] Terminating thread with return code -22 (Invalid argument)
+[out#0/rawvideo @ 00000206a9694cc0] Error writing trailer: Invalid argument
+[out#0/rawvideo @ 00000206a9694cc0] Error closing file: Invalid argument
