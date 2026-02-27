@@ -1,0 +1,493 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00F9BEFE14B33539D1D669B8 /* CoordinateMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452599DFCA2C76A0E4F6127A /* CoordinateMapper.swift */; };
+		0DAA6B286F3D4E85FEDD42AA /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B145048F3A0F5BF1675C81 /* Logger.swift */; };
+		12634FA50DD55EBB3DD31BFB /* TrackingStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6079A1B1139DB7C4286FFB3 /* TrackingStateMachine.swift */; };
+		1A55A8A81E6C7EE64ED5C729 /* StatusOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D6C4B5888576BEFEF8DDDE5 /* StatusOverlayView.swift */; };
+		1BE8423B5F96EEF45AE67ADB /* MetadataReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5F4FBDCA709F4A7D51900E /* MetadataReporter.swift */; };
+		2392B27275A23E16491DC539 /* ServerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F4CB7B5A2FAC546DDED625 /* ServerConnection.swift */; };
+		26FAC256D8F9006F6E3FAB69 /* KalmanFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75308B4F2E731D3801A81370 /* KalmanFilter.swift */; };
+		297D090645A9F31E93AC5B6C /* LiveCatCamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAB9332797D3AB4E942EBCE /* LiveCatCamApp.swift */; };
+		2F84747C7460F35B17D58D9E /* SRTStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816961DF1D12AD1B951F25D7 /* SRTStreamer.swift */; };
+		30C3DACE0C335E9BD133BA6D /* ConnectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3A9E81F95EC342C14BA249 /* ConnectionMonitor.swift */; };
+		4336A8E90E353CB39559C7F0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C772D858027C8EE0ACC7D7 /* AppState.swift */; };
+		4EDE2E7040DD014267D71532 /* CatTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169A40AA8599E02FD8C7E714 /* CatTracker.swift */; };
+		557D2BC77F53CC79E9996BE3 /* MovingAverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442C17AE3F45A927E5A44625 /* MovingAverage.swift */; };
+		6D983AD540FB05A159EF1241 /* PoseClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD3482982487DE4A378132A /* PoseClassifier.swift */; };
+		7429435D0675D691536F4794 /* MetadataMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21AB6F823B0F2C57B1903269 /* MetadataMessage.swift */; };
+		AA6EB5EEBCE8ACC669F33CBC /* CameraConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0BB5CC71C42480F9826F5B /* CameraConfig.swift */; };
+		AB7A37428E46C24EB1FD6C79 /* CatPose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CB708B476FC83144FCA50C /* CatPose.swift */; };
+		ADB746BEB21DC0E092F0B271 /* CatProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25E683FAC836A007A78D2B4D /* CatProfile.swift */; };
+		B7AD4B21EEB326BE073C1EC9 /* ServerCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF812BE7C8101FE9D790C8C /* ServerCommand.swift */; };
+		BC5B7819019BEB7188611CE2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CE46B4BFED0BB76F5818B5 /* ContentView.swift */; };
+		C2208E55A908AC385A5403A1 /* ActivityEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B83E300B2199CA1AC362BC /* ActivityEvent.swift */; };
+		C32689821291397CA2B34D95 /* DebugCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8687B8BD221C534306C0224B /* DebugCameraView.swift */; };
+		C5F2791A217D0A8E363086E7 /* CatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0306764EEBF1BEDED99146 /* CatDetector.swift */; };
+		D553C7D72722788A25361C43 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 596EB92CBAC44E534E25329C /* CameraManager.swift */; };
+		D56ABE08E4F7F436C1565392 /* TrackingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38CF4C90C8A6BC6D554DF9F9 /* TrackingState.swift */; };
+		E113B7FD18A4623963FBF6C4 /* AudioEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B040FF1714F4716133F8CD6 /* AudioEncoder.swift */; };
+		E49648569FF5E50167293245 /* MotorController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C441F387AA83721E702173 /* MotorController.swift */; };
+		E563B352983A658F81D9A9A2 /* CommandReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45C0E25B385805BF44D2473B /* CommandReceiver.swift */; };
+		E8F7BF89C3C8563BE8D8DF2D /* VideoEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F009AA501D2EC4BAB8A1029 /* VideoEncoder.swift */; };
+		EEB50F84541256DE9BB60778 /* AudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 742F853D70BBB43F3882B4DD /* AudioCapture.swift */; };
+		EFD33424C07D035D2B12CC71 /* ActivityScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EAC05966D26EA8AC2506AE0 /* ActivityScorer.swift */; };
+		FB2CEFF6CC852360BC7978BD /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C709389B9886BCA57CA161A /* ConfigurationView.swift */; };
+		FB63AFED88DD875023477601 /* MotorControllerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE62B73946C092F2488A5527 /* MotorControllerMock.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		01B145048F3A0F5BF1675C81 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
+		0C709389B9886BCA57CA161A /* ConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationView.swift; sourceTree = "<group>"; };
+		0EAC05966D26EA8AC2506AE0 /* ActivityScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityScorer.swift; sourceTree = "<group>"; };
+		10B45B9945989FF704761A91 /* LiveCatCam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiveCatCam.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		11CB708B476FC83144FCA50C /* CatPose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatPose.swift; sourceTree = "<group>"; };
+		169A40AA8599E02FD8C7E714 /* CatTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatTracker.swift; sourceTree = "<group>"; };
+		19B83E300B2199CA1AC362BC /* ActivityEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEvent.swift; sourceTree = "<group>"; };
+		1B040FF1714F4716133F8CD6 /* AudioEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioEncoder.swift; sourceTree = "<group>"; };
+		21AB6F823B0F2C57B1903269 /* MetadataMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataMessage.swift; sourceTree = "<group>"; };
+		23C441F387AA83721E702173 /* MotorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorController.swift; sourceTree = "<group>"; };
+		25E683FAC836A007A78D2B4D /* CatProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatProfile.swift; sourceTree = "<group>"; };
+		2A5F4FBDCA709F4A7D51900E /* MetadataReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataReporter.swift; sourceTree = "<group>"; };
+		38CF4C90C8A6BC6D554DF9F9 /* TrackingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingState.swift; sourceTree = "<group>"; };
+		3B3A9E81F95EC342C14BA249 /* ConnectionMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionMonitor.swift; sourceTree = "<group>"; };
+		3D6C4B5888576BEFEF8DDDE5 /* StatusOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusOverlayView.swift; sourceTree = "<group>"; };
+		3F009AA501D2EC4BAB8A1029 /* VideoEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEncoder.swift; sourceTree = "<group>"; };
+		442C17AE3F45A927E5A44625 /* MovingAverage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovingAverage.swift; sourceTree = "<group>"; };
+		452599DFCA2C76A0E4F6127A /* CoordinateMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoordinateMapper.swift; sourceTree = "<group>"; };
+		45C0E25B385805BF44D2473B /* CommandReceiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandReceiver.swift; sourceTree = "<group>"; };
+		596EB92CBAC44E534E25329C /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		5AD3482982487DE4A378132A /* PoseClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseClassifier.swift; sourceTree = "<group>"; };
+		742F853D70BBB43F3882B4DD /* AudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioCapture.swift; sourceTree = "<group>"; };
+		75308B4F2E731D3801A81370 /* KalmanFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KalmanFilter.swift; sourceTree = "<group>"; };
+		77CE46B4BFED0BB76F5818B5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		816961DF1D12AD1B951F25D7 /* SRTStreamer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SRTStreamer.swift; sourceTree = "<group>"; };
+		8687B8BD221C534306C0224B /* DebugCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugCameraView.swift; sourceTree = "<group>"; };
+		8EF812BE7C8101FE9D790C8C /* ServerCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerCommand.swift; sourceTree = "<group>"; };
+		92C772D858027C8EE0ACC7D7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		9E0BB5CC71C42480F9826F5B /* CameraConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraConfig.swift; sourceTree = "<group>"; };
+		B6079A1B1139DB7C4286FFB3 /* TrackingStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingStateMachine.swift; sourceTree = "<group>"; };
+		B8F4CB7B5A2FAC546DDED625 /* ServerConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConnection.swift; sourceTree = "<group>"; };
+		BB0306764EEBF1BEDED99146 /* CatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatDetector.swift; sourceTree = "<group>"; };
+		EDAB9332797D3AB4E942EBCE /* LiveCatCamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCatCamApp.swift; sourceTree = "<group>"; };
+		EE62B73946C092F2488A5527 /* MotorControllerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorControllerMock.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		182DC2B71A13E34EBBE8ED8D /* Tracking */ = {
+			isa = PBXGroup;
+			children = (
+				0EAC05966D26EA8AC2506AE0 /* ActivityScorer.swift */,
+				BB0306764EEBF1BEDED99146 /* CatDetector.swift */,
+				169A40AA8599E02FD8C7E714 /* CatTracker.swift */,
+				23C441F387AA83721E702173 /* MotorController.swift */,
+				EE62B73946C092F2488A5527 /* MotorControllerMock.swift */,
+				5AD3482982487DE4A378132A /* PoseClassifier.swift */,
+				B6079A1B1139DB7C4286FFB3 /* TrackingStateMachine.swift */,
+			);
+			path = Tracking;
+			sourceTree = "<group>";
+		};
+		69FEDDE0F96E7D79C07EFC9E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				10B45B9945989FF704761A91 /* LiveCatCam.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		717F03E71E50473BB2B8BCA2 = {
+			isa = PBXGroup;
+			children = (
+				CF81A322D222070184F5844B /* LiveCatCam */,
+				69FEDDE0F96E7D79C07EFC9E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9439DEC04954416B14EDF36F /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				45C0E25B385805BF44D2473B /* CommandReceiver.swift */,
+				3B3A9E81F95EC342C14BA249 /* ConnectionMonitor.swift */,
+				2A5F4FBDCA709F4A7D51900E /* MetadataReporter.swift */,
+				B8F4CB7B5A2FAC546DDED625 /* ServerConnection.swift */,
+			);
+			path = Network;
+			sourceTree = "<group>";
+		};
+		951100B0140C699C98A29BE3 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				452599DFCA2C76A0E4F6127A /* CoordinateMapper.swift */,
+				75308B4F2E731D3801A81370 /* KalmanFilter.swift */,
+				01B145048F3A0F5BF1675C81 /* Logger.swift */,
+				442C17AE3F45A927E5A44625 /* MovingAverage.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		BA25D0E5E44CFE90C5AD1D6A /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				0C709389B9886BCA57CA161A /* ConfigurationView.swift */,
+				8687B8BD221C534306C0224B /* DebugCameraView.swift */,
+				3D6C4B5888576BEFEF8DDDE5 /* StatusOverlayView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		CF81A322D222070184F5844B /* LiveCatCam */ = {
+			isa = PBXGroup;
+			children = (
+				F43AC4D577FF4A97A1C91CA3 /* App */,
+				D481BC26F1DE11135F1789F5 /* Capture */,
+				DFEB4399AC5ADEA5136B1447 /* Models */,
+				9439DEC04954416B14EDF36F /* Network */,
+				182DC2B71A13E34EBBE8ED8D /* Tracking */,
+				BA25D0E5E44CFE90C5AD1D6A /* UI */,
+				951100B0140C699C98A29BE3 /* Utils */,
+			);
+			name = LiveCatCam;
+			path = Sources/LiveCatCam;
+			sourceTree = "<group>";
+		};
+		D481BC26F1DE11135F1789F5 /* Capture */ = {
+			isa = PBXGroup;
+			children = (
+				742F853D70BBB43F3882B4DD /* AudioCapture.swift */,
+				1B040FF1714F4716133F8CD6 /* AudioEncoder.swift */,
+				596EB92CBAC44E534E25329C /* CameraManager.swift */,
+				816961DF1D12AD1B951F25D7 /* SRTStreamer.swift */,
+				3F009AA501D2EC4BAB8A1029 /* VideoEncoder.swift */,
+			);
+			path = Capture;
+			sourceTree = "<group>";
+		};
+		DFEB4399AC5ADEA5136B1447 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				19B83E300B2199CA1AC362BC /* ActivityEvent.swift */,
+				9E0BB5CC71C42480F9826F5B /* CameraConfig.swift */,
+				11CB708B476FC83144FCA50C /* CatPose.swift */,
+				25E683FAC836A007A78D2B4D /* CatProfile.swift */,
+				21AB6F823B0F2C57B1903269 /* MetadataMessage.swift */,
+				8EF812BE7C8101FE9D790C8C /* ServerCommand.swift */,
+				38CF4C90C8A6BC6D554DF9F9 /* TrackingState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		F43AC4D577FF4A97A1C91CA3 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				92C772D858027C8EE0ACC7D7 /* AppState.swift */,
+				77CE46B4BFED0BB76F5818B5 /* ContentView.swift */,
+				EDAB9332797D3AB4E942EBCE /* LiveCatCamApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		29E140BE7FAEDCA34E0BC758 /* LiveCatCam */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DB63DB216067D38956233CC6 /* Build configuration list for PBXNativeTarget "LiveCatCam" */;
+			buildPhases = (
+				7523D638FD8691D6013AC725 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiveCatCam;
+			packageProductDependencies = (
+			);
+			productName = LiveCatCam;
+			productReference = 10B45B9945989FF704761A91 /* LiveCatCam.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		140BF7CBEFF64B095E221D3B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					29E140BE7FAEDCA34E0BC758 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9D7B9F7FE11308D87CA2063C /* Build configuration list for PBXProject "LiveCatCam" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 717F03E71E50473BB2B8BCA2;
+			minimizedProjectReferenceProxies = 1;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				29E140BE7FAEDCA34E0BC758 /* LiveCatCam */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7523D638FD8691D6013AC725 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C2208E55A908AC385A5403A1 /* ActivityEvent.swift in Sources */,
+				EFD33424C07D035D2B12CC71 /* ActivityScorer.swift in Sources */,
+				4336A8E90E353CB39559C7F0 /* AppState.swift in Sources */,
+				EEB50F84541256DE9BB60778 /* AudioCapture.swift in Sources */,
+				E113B7FD18A4623963FBF6C4 /* AudioEncoder.swift in Sources */,
+				AA6EB5EEBCE8ACC669F33CBC /* CameraConfig.swift in Sources */,
+				D553C7D72722788A25361C43 /* CameraManager.swift in Sources */,
+				C5F2791A217D0A8E363086E7 /* CatDetector.swift in Sources */,
+				AB7A37428E46C24EB1FD6C79 /* CatPose.swift in Sources */,
+				ADB746BEB21DC0E092F0B271 /* CatProfile.swift in Sources */,
+				4EDE2E7040DD014267D71532 /* CatTracker.swift in Sources */,
+				E563B352983A658F81D9A9A2 /* CommandReceiver.swift in Sources */,
+				FB2CEFF6CC852360BC7978BD /* ConfigurationView.swift in Sources */,
+				30C3DACE0C335E9BD133BA6D /* ConnectionMonitor.swift in Sources */,
+				BC5B7819019BEB7188611CE2 /* ContentView.swift in Sources */,
+				00F9BEFE14B33539D1D669B8 /* CoordinateMapper.swift in Sources */,
+				C32689821291397CA2B34D95 /* DebugCameraView.swift in Sources */,
+				26FAC256D8F9006F6E3FAB69 /* KalmanFilter.swift in Sources */,
+				297D090645A9F31E93AC5B6C /* LiveCatCamApp.swift in Sources */,
+				0DAA6B286F3D4E85FEDD42AA /* Logger.swift in Sources */,
+				7429435D0675D691536F4794 /* MetadataMessage.swift in Sources */,
+				1BE8423B5F96EEF45AE67ADB /* MetadataReporter.swift in Sources */,
+				E49648569FF5E50167293245 /* MotorController.swift in Sources */,
+				FB63AFED88DD875023477601 /* MotorControllerMock.swift in Sources */,
+				557D2BC77F53CC79E9996BE3 /* MovingAverage.swift in Sources */,
+				6D983AD540FB05A159EF1241 /* PoseClassifier.swift in Sources */,
+				2F84747C7460F35B17D58D9E /* SRTStreamer.swift in Sources */,
+				B7AD4B21EEB326BE073C1EC9 /* ServerCommand.swift in Sources */,
+				2392B27275A23E16491DC539 /* ServerConnection.swift in Sources */,
+				1A55A8A81E6C7EE64ED5C729 /* StatusOverlayView.swift in Sources */,
+				D56ABE08E4F7F436C1565392 /* TrackingState.swift in Sources */,
+				12634FA50DD55EBB3DD31BFB /* TrackingStateMachine.swift in Sources */,
+				E8F7BF89C3C8563BE8D8DF2D /* VideoEncoder.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		BE32A54201D6DC1B489183F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SupportFiles/LiveCatCam.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SXMBC325X9;
+				INFOPLIST_FILE = SupportFiles/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.livecat.cam;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C01AEE01231B5CB9E8B3AACD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = SupportFiles/LiveCatCam.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SXMBC325X9;
+				INFOPLIST_FILE = SupportFiles/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.livecat.cam;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = YES;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		E9A009633110103D0ACD303D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		FE7157666D81F5AE39460E61 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9D7B9F7FE11308D87CA2063C /* Build configuration list for PBXProject "LiveCatCam" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E9A009633110103D0ACD303D /* Debug */,
+				FE7157666D81F5AE39460E61 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DB63DB216067D38956233CC6 /* Build configuration list for PBXNativeTarget "LiveCatCam" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C01AEE01231B5CB9E8B3AACD /* Debug */,
+				BE32A54201D6DC1B489183F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 140BF7CBEFF64B095E221D3B /* Project object */;
+}

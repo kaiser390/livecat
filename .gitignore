@@ -43,6 +43,14 @@ models/*.onnx
 tests/*.mp4
 tests/*.jpg
 
+# iOS / Xcode
+ios/LiveCatCam/.build/
+ios/LiveCatCam/LiveCatCam.xcodeproj/xcuserdata/
+ios/LiveCatCam/LiveCatCam.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
 # OS
 .DS_Store
 Thumbs.db
