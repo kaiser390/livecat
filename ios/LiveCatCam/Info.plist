@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Camera permission -->
+    <key>NSCameraUsageDescription</key>
+    <string>LiveCatCam needs camera access to stream live video of your cat.</string>
+
+    <!-- Microphone permission -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>LiveCatCam needs microphone access to stream audio.</string>
+
+    <!-- Local Network permission (iOS 14+) -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>LiveCatCam needs local network access to stream video to your PC.</string>
+
+    <!-- Bonjour services for local network -->
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_http._tcp</string>
+    </array>
+
+    <!-- Force landscape only -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- Prevent status bar -->
+    <key>UIStatusBarHidden</key>
+    <true/>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+
+    <!-- Background modes (keep streaming when app briefly backgrounded) -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>audio</string>
+    </array>
+
+    <!-- App Transport Security — allow local HTTP/WS -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+
+    <!-- Bundle display name -->
+    <key>CFBundleDisplayName</key>
+    <string>LiveCatCam</string>
+
+    <!-- Version -->
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+</dict>
+</plist>
