@@ -1,0 +1,13 @@
+/* LiveCatCam Korean Localization */
+
+"settings" = "설정";
+"server_ip" = "서버 IP";
+"udp_port" = "포트";
+"ws_port" = "WebSocket";
+"quality" = "화질";
+"audio" = "오디오";
+"auto_reconnect" = "자동 재연결";
+"idle" = "대기";
+"start" = "시작";
+"stop" = "정지";
+"overheat_warning" = "과열 경고";

@@ -1,0 +1,13 @@
+/* LiveCatCam English Localization */
+
+"settings" = "Settings";
+"server_ip" = "Server IP";
+"udp_port" = "Port";
+"ws_port" = "WebSocket";
+"quality" = "Quality";
+"audio" = "Audio";
+"auto_reconnect" = "Auto Reconnect";
+"idle" = "Idle";
+"start" = "Start";
+"stop" = "Stop";
+"overheat_warning" = "Overheat Warning";
