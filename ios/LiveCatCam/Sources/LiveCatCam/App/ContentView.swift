@@ -2,76 +2,61 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppState.self) private var appState
-    @State private var showConfig = false
+    @State private var pinchScale: CGFloat = 1.0
+    @State private var lastZoom: Double = 1.0
 
     var body: some View {
         ZStack {
-            // Camera preview layer
+            // Fullscreen camera preview
             DebugCameraView()
                 .ignoresSafeArea()
+                .gesture(
+                    MagnifyGesture()
+                        .onChanged { value in
+                            let newZoom = lastZoom * value.magnification
+                            let clamped = min(max(newZoom, 1.0), 10.0)
+                            appState.setZoomLevel(clamped)
+                        }
+                        .onEnded { value in
+                            lastZoom = appState.currentZoom
+                        }
+                )
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        appState.showControls.toggle()
+                    }
+                }
 
-            // HUD overlay
-            StatusOverlayView()
+            // Overlay controls
+            if appState.showControls {
+                StatusOverlayView()
+                    .transition(.opacity)
+            }
 
-            // Debug log overlay
+            // Settings panel (slide from right)
+            if appState.showSettings {
+                ConfigurationView()
+                    .transition(.move(edge: .trailing))
+            }
+
+            // Debug log overlay (visible when controls hidden)
             if !appState.debugLog.isEmpty {
                 VStack {
                     Spacer()
                     Text(appState.debugLog)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.green)
-                        .padding(8)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.green.opacity(0.7))
+                        .padding(6)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.black.opacity(0.7))
-                        .padding(.bottom, 80)
+                        .background(.black.opacity(0.5))
                 }
-            }
-
-            // Top bar: settings + start/stop
-            VStack {
-                HStack {
-                    // Start/Stop button
-                    Button {
-                        Task {
-                            if appState.isLive {
-                                await appState.stopStreaming()
-                            } else {
-                                await appState.startStreaming()
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: appState.isLive ? "stop.circle.fill" : "play.circle.fill")
-                                .font(.title2)
-                            Text(appState.isLive ? "STOP" : "START")
-                                .font(.caption.bold())
-                        }
-                        .foregroundStyle(appState.isLive ? .red : .green)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial, in: Capsule())
-                    }
-
-                    Spacer()
-
-                    // Settings button
-                    Button {
-                        showConfig = true
-                    } label: {
-                        Image(systemName: "gear")
-                            .font(.title2)
-                            .foregroundStyle(.white)
-                            .padding(12)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                }
-                .padding()
-                Spacer()
+                .allowsHitTesting(false)
             }
         }
         .preferredColorScheme(.dark)
-        .sheet(isPresented: $showConfig) {
-            ConfigurationView()
-        }
+        #if os(iOS)
+        .statusBarHidden(true)
+        .persistentSystemOverlays(.hidden)
+        #endif
     }
 }

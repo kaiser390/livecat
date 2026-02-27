@@ -62,6 +62,11 @@ final class CameraPreviewUIView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         previewLayer.frame = bounds
+        // Force landscape right for preview (separate from video data output connection)
+        if let connection = previewLayer.connection,
+           connection.isVideoOrientationSupported {
+            connection.videoOrientation = .landscapeRight
+        }
     }
 }
 #endif

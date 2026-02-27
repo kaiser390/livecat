@@ -9,10 +9,12 @@ final class CameraManager: NSObject, @unchecked Sendable {
     private var captureDevice: AVCaptureDevice?
 
     var onFrame: ((CVPixelBuffer, CMTime) -> Void)?
+    var diagnosticInfo: String = ""
 
     private(set) var isRunning = false
     private(set) var currentFPS: Double = 0
     private var frameTimestamps: [CFTimeInterval] = []
+    private var frameCount: UInt64 = 0
 
     func configure(resolution: CameraConfig.Resolution = .hd720p, fps: Int = 30) throws {
         session.beginConfiguration()
@@ -53,9 +55,13 @@ final class CameraManager: NSObject, @unchecked Sendable {
         }
         session.addOutput(videoOutput)
 
-        // Set video orientation to landscape right (home button on right)
+        // Rotate actual pixel data to landscape right (deprecated but physically rotates CVPixelBuffer)
         if let connection = videoOutput.connection(with: .video) {
-            connection.videoRotationAngle = 0
+            if connection.isVideoOrientationSupported {
+                connection.videoOrientation = .landscapeRight
+                diagnosticInfo = "videoOrientation=landscapeRight"
+                Log.camera.info("Video orientation set to landscapeRight (pixel rotation)")
+            }
         }
 
         Log.camera.info("Camera configured: \(resolution.rawValue) @ \(fps)fps")
@@ -200,6 +206,18 @@ extension CameraManager: AVCaptureVideoDataOutputSampleBufferDelegate {
     ) {
         updateFPS()
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        // Log first frame dimensions
+        frameCount += 1
+        if frameCount == 1 {
+            let w = CVPixelBufferGetWidth(pixelBuffer)
+            let h = CVPixelBufferGetHeight(pixelBuffer)
+            let angle = connection.videoRotationAngle
+            let info = "frame=\(w)x\(h) angle=\(Int(angle))"
+            diagnosticInfo += " | \(info)"
+            Log.camera.info("First frame: \(w)x\(h), connection.videoRotationAngle=\(angle)")
+        }
+
         let timestamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         onFrame?(pixelBuffer, timestamp)
     }

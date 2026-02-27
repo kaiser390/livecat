@@ -1,8 +1,8 @@
 name: LiveCatCam
 options:
-  bundleIdPrefix: com.livecat
+  bundleIdPrefix: com.kaiser390
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "17.0"
   generateEmptyDirectories: true
 
 settings:
@@ -10,7 +10,6 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: 1
-    GENERATE_INFOPLIST_FILE: false
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     SUPPORTS_MACCATALYST: false
 
@@ -22,19 +21,33 @@ targets:
     sources:
       - path: Sources/LiveCatCam
         type: group
+      - path: SupportFiles/Assets.xcassets
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.livecat.cam
+        PRODUCT_BUNDLE_IDENTIFIER: com.kaiser390.OLiveCam
+        PRODUCT_NAME: OLiveCam
         INFOPLIST_FILE: SupportFiles/Info.plist
         CODE_SIGN_ENTITLEMENTS: SupportFiles/LiveCatCam.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: SXMBC325X9
+
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: 1
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
-    resources:
-      - path: Resources
-        optional: true
-      - path: SupportFiles/Assets.xcassets
     entitlements:
       path: SupportFiles/LiveCatCam.entitlements
+
+schemes:
+  OLiveCam:
+    build:
+      targets:
+        LiveCatCam: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug

@@ -2,106 +2,177 @@ import SwiftUI
 
 struct ConfigurationView: View {
     @Environment(AppState.self) private var appState
-    @Environment(\.dismiss) private var dismiss
-
     @State private var serverIP: String = ""
-    @State private var camID: String = ""
     @State private var srtPort: String = ""
-    @State private var selectedResolution: CameraConfig.Resolution = .hd720p
+    @State private var camID: String = ""
+    @State private var selectedResolution: CameraConfig.Resolution = .hd1080p
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Server") {
-                    HStack {
-                        Text("IP Address")
-                        Spacer()
-                        TextField("192.168.1.100", text: $serverIP)
-                            .multilineTextAlignment(.trailing)
-                            #if os(iOS)
-                            .keyboardType(.decimalPad)
-                            #endif
-                    }
-                    HStack {
-                        Text("Metadata Port")
-                        Spacer()
-                        Text("8081")
-                            .foregroundStyle(.secondary)
+        HStack(spacing: 0) {
+            // Tap outside to close
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        appState.showSettings = false
                     }
                 }
 
-                Section("Camera") {
-                    HStack {
-                        Text("Camera ID")
-                        Spacer()
-                        TextField("CAM-1", text: $camID)
-                            .multilineTextAlignment(.trailing)
+            // Settings panel
+            VStack(alignment: .leading, spacing: 0) {
+                // Header
+                HStack {
+                    Text("Settings")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            appState.showSettings = false
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white.opacity(0.5))
                     }
-                    HStack {
-                        Text("SRT Port")
-                        Spacer()
-                        TextField("9000", text: $srtPort)
-                            .multilineTextAlignment(.trailing)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                Divider().background(.white.opacity(0.15))
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Server section
+                        settingsSection("SERVER") {
+                            settingsField("IP Address", text: $serverIP, placeholder: "192.168.123.106")
+                            settingsField("SRT Port", text: $srtPort, placeholder: "9000")
+                        }
+
+                        // Camera section
+                        settingsSection("CAMERA") {
+                            settingsField("Camera ID", text: $camID, placeholder: "CAM-1")
+                            HStack {
+                                Text("Resolution")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.white.opacity(0.6))
+                                Spacer()
+                                Picker("", selection: $selectedResolution) {
+                                    ForEach(CameraConfig.Resolution.allCases, id: \.self) { res in
+                                        Text(res.rawValue).tag(res)
+                                    }
+                                }
+                                .tint(.white)
+                            }
+                        }
+
+                        // Status section
+                        settingsSection("STATUS") {
+                            statusRow("Connection", value: appState.isConnected ? "Connected" : "Off",
+                                      color: appState.isConnected ? .green : .white.opacity(0.4))
+                            statusRow("Streaming", value: appState.isStreaming ? "Active" : "Off",
+                                      color: appState.isStreaming ? .green : .white.opacity(0.4))
+                            statusRow("FPS", value: String(format: "%.0f", appState.currentFPS),
+                                      color: .white)
+                            statusRow("Thermal", value: thermalLabel, color: thermalColor)
+                        }
+
+                        // Presets
+                        settingsSection("PRESETS") {
+                            HStack(spacing: 10) {
+                                presetButton("CAM-1") { applyPreset(.cam1) }
+                                presetButton("CAM-2") { applyPreset(.cam2) }
+                            }
+                        }
+
+                        // Save
+                        Button {
+                            saveConfig()
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                appState.showSettings = false
+                            }
                             #if os(iOS)
-                            .keyboardType(.numberPad)
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
                             #endif
-                    }
-                    Picker("Resolution", selection: $selectedResolution) {
-                        ForEach(CameraConfig.Resolution.allCases, id: \.self) { res in
-                            Text(res.rawValue).tag(res)
+                        } label: {
+                            Text("Save")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .background(Color(red: 0.2, green: 0.5, blue: 1.0), in: RoundedRectangle(cornerRadius: 8))
                         }
                     }
+                    .padding(16)
                 }
+            }
+            .frame(width: 280)
+            .background(.ultraThinMaterial)
+        }
+        .ignoresSafeArea()
+        .onAppear { loadConfig() }
+    }
 
-                Section("Status") {
-                    LabeledContent("Connection") {
-                        Text(appState.isConnected ? "Connected" : "Disconnected")
-                            .foregroundStyle(appState.isConnected ? .green : .red)
-                    }
-                    LabeledContent("Streaming") {
-                        Text(appState.isStreaming ? "Active" : "Inactive")
-                            .foregroundStyle(appState.isStreaming ? .green : .red)
-                    }
-                    LabeledContent("FPS") {
-                        Text(String(format: "%.1f", appState.currentFPS))
-                    }
-                    LabeledContent("Thermal") {
-                        Text(thermalLabel)
-                            .foregroundStyle(thermalColor)
-                    }
-                }
+    // MARK: - Components
 
-                Section("Presets") {
-                    Button("CAM-1 (Nana)") {
-                        applyPreset(.cam1)
-                    }
-                    Button("CAM-2 (Toto)") {
-                        applyPreset(.cam2)
-                    }
-                }
-            }
-            .navigationTitle("Configuration")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveConfig()
-                        dismiss()
-                    }
-                }
-            }
-            .onAppear {
-                loadConfig()
-            }
+    private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.4))
+            content()
         }
     }
 
-    // MARK: - Config loading/saving
+    private func settingsField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.6))
+            Spacer()
+            TextField(placeholder, text: text)
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 130)
+                #if os(iOS)
+                .keyboardType(.decimalPad)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                    }
+                }
+                #endif
+        }
+    }
+
+    private func statusRow(_ label: String, value: String, color: Color) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.6))
+            Spacer()
+            Text(value)
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                .foregroundStyle(color)
+        }
+    }
+
+    private func presetButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+    // MARK: - Config
 
     private func loadConfig() {
         serverIP = appState.config.serverIP
@@ -124,15 +195,15 @@ struct ConfigurationView: View {
         selectedResolution = preset.resolution
     }
 
-    // MARK: - Thermal display
+    // MARK: - Thermal
 
     private var thermalLabel: String {
         switch appState.thermalState {
-        case .nominal: return "Normal"
+        case .nominal: return "OK"
         case .fair: return "Warm"
         case .serious: return "Hot"
         case .critical: return "Critical"
-        @unknown default: return "Unknown"
+        @unknown default: return "?"
         }
     }
 

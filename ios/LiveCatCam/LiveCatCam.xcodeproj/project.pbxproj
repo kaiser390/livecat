@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00C3A36D089BD8028783FC8F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 972988FFE2FE7E21658B7032 /* Assets.xcassets */; };
 		00F9BEFE14B33539D1D669B8 /* CoordinateMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452599DFCA2C76A0E4F6127A /* CoordinateMapper.swift */; };
 		0DAA6B286F3D4E85FEDD42AA /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B145048F3A0F5BF1675C81 /* Logger.swift */; };
 		12634FA50DD55EBB3DD31BFB /* TrackingStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6079A1B1139DB7C4286FFB3 /* TrackingStateMachine.swift */; };
@@ -46,7 +47,7 @@
 		01B145048F3A0F5BF1675C81 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		0C709389B9886BCA57CA161A /* ConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationView.swift; sourceTree = "<group>"; };
 		0EAC05966D26EA8AC2506AE0 /* ActivityScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityScorer.swift; sourceTree = "<group>"; };
-		10B45B9945989FF704761A91 /* LiveCatCam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiveCatCam.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		10B45B9945989FF704761A91 /* LiveCatCam.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LiveCatCam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11CB708B476FC83144FCA50C /* CatPose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatPose.swift; sourceTree = "<group>"; };
 		169A40AA8599E02FD8C7E714 /* CatTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatTracker.swift; sourceTree = "<group>"; };
 		19B83E300B2199CA1AC362BC /* ActivityEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityEvent.swift; sourceTree = "<group>"; };
@@ -71,6 +72,7 @@
 		8687B8BD221C534306C0224B /* DebugCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugCameraView.swift; sourceTree = "<group>"; };
 		8EF812BE7C8101FE9D790C8C /* ServerCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerCommand.swift; sourceTree = "<group>"; };
 		92C772D858027C8EE0ACC7D7 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		972988FFE2FE7E21658B7032 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9E0BB5CC71C42480F9826F5B /* CameraConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraConfig.swift; sourceTree = "<group>"; };
 		B6079A1B1139DB7C4286FFB3 /* TrackingStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingStateMachine.swift; sourceTree = "<group>"; };
 		B8F4CB7B5A2FAC546DDED625 /* ServerConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConnection.swift; sourceTree = "<group>"; };
@@ -106,6 +108,7 @@
 			isa = PBXGroup;
 			children = (
 				CF81A322D222070184F5844B /* LiveCatCam */,
+				E1F849294BA97FC7F31FEE40 /* SupportFiles */,
 				69FEDDE0F96E7D79C07EFC9E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -183,6 +186,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		E1F849294BA97FC7F31FEE40 /* SupportFiles */ = {
+			isa = PBXGroup;
+			children = (
+				972988FFE2FE7E21658B7032 /* Assets.xcassets */,
+			);
+			path = SupportFiles;
+			sourceTree = "<group>";
+		};
 		F43AC4D577FF4A97A1C91CA3 /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -201,6 +212,7 @@
 			buildConfigurationList = DB63DB216067D38956233CC6 /* Build configuration list for PBXNativeTarget "LiveCatCam" */;
 			buildPhases = (
 				7523D638FD8691D6013AC725 /* Sources */,
+				D88116BDD7DBD5149F0ED574 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -223,6 +235,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					29E140BE7FAEDCA34E0BC758 = {
+						DevelopmentTeam = SXMBC325X9;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -237,6 +250,7 @@
 			);
 			mainGroup = 717F03E71E50473BB2B8BCA2;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -244,6 +258,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D88116BDD7DBD5149F0ED574 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				00C3A36D089BD8028783FC8F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7523D638FD8691D6013AC725 /* Sources */ = {
@@ -302,7 +327,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.livecat.cam;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kaiser390.OLiveCam;
+				PRODUCT_NAME = OLiveCam;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -326,7 +352,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.livecat.cam;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kaiser390.OLiveCam;
+				PRODUCT_NAME = OLiveCam;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -389,8 +416,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -451,8 +477,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;

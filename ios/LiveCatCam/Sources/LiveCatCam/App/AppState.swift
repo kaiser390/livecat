@@ -1,6 +1,9 @@
 import Foundation
 import SwiftUI
 import CoreMedia
+#if os(iOS)
+import UIKit
+#endif
 
 /// Central app state coordinating all modules.
 @Observable @MainActor
@@ -37,6 +40,39 @@ final class AppState {
     var thermalState: ProcessInfo.ThermalState = .nominal
     var debugLog: String = ""
 
+    // MARK: - UI state
+    var showControls = true
+    var showSettings = false
+    var currentZoom: Double = 1.0
+    var isMuted = false
+    private var streamStartTime: Date?
+    private var elapsedTimer: Task<Void, Never>?
+    var elapsedSeconds: Int = 0
+
+    var formattedTime: String {
+        let h = elapsedSeconds / 3600
+        let m = (elapsedSeconds % 3600) / 60
+        let s = elapsedSeconds % 60
+        return String(format: "%02d:%02d:%02d", h, m, s)
+    }
+
+    #if os(iOS)
+    var batteryLevel: Float { UIDevice.current.batteryLevel }
+    var batteryIcon: String {
+        if UIDevice.current.batteryState == .charging { return "battery.100.bolt" }
+        let level = UIDevice.current.batteryLevel
+        if level > 0.75 { return "battery.100" }
+        if level > 0.50 { return "battery.75" }
+        if level > 0.25 { return "battery.50" }
+        return "battery.25" }
+    var batteryColor: Color {
+        let level = UIDevice.current.batteryLevel
+        if UIDevice.current.batteryState == .charging { return .green }
+        if level > 0.2 { return .white }
+        return .red
+    }
+    #endif
+
     // MARK: - Watchdog
     private var lastFrameTime: TimeInterval = 0
     private var watchdogTask: Task<Void, Never>?
@@ -64,6 +100,12 @@ final class AppState {
             Log.app.warning("Audio attach failed: \(error)")
         }
 
+        // Show camera diagnostic info after short delay (wait for first frame)
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            addDebug("CAM: \(cameraManager.diagnosticInfo)")
+        }
+
         cameraManager.onFrame = { [weak self] pixelBuffer, timestamp in
             guard let self else { return }
             self.lastFrameTime = Date().timeIntervalSince1970
@@ -72,6 +114,9 @@ final class AppState {
             }
         }
         cameraManager.start()
+        #if os(iOS)
+        UIDevice.current.isBatteryMonitoringEnabled = true
+        #endif
         startThermalMonitoring()
     }
 
@@ -143,6 +188,9 @@ final class AppState {
 
         // Set live BEFORE async network calls (so encoding starts immediately)
         isLive = true
+        streamStartTime = Date()
+        elapsedSeconds = 0
+        startElapsedTimer()
         startWatchdog()
         addDebug("LIVE! Streaming started")
 
@@ -158,6 +206,7 @@ final class AppState {
 
     /// Stop streaming + server connection (user taps Stop)
     func stopStreaming() async {
+        elapsedTimer?.cancel()
         watchdogTask?.cancel()
         videoEncoder?.stop()
         audioEncoder?.stop()
@@ -316,6 +365,25 @@ final class AppState {
             self.motorPan = pan
             self.motorTilt = tilt
         }
+    }
+
+    // MARK: - Elapsed timer
+
+    private func startElapsedTimer() {
+        elapsedTimer = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, let start = self.streamStartTime else { return }
+                self.elapsedSeconds = Int(Date().timeIntervalSince(start))
+            }
+        }
+    }
+
+    // MARK: - Zoom control
+
+    func setZoomLevel(_ factor: Double) {
+        currentZoom = factor
+        cameraManager.setZoom(factor: factor)
     }
 
     // MARK: - Watchdog (restart pipeline if no frames for 30s)

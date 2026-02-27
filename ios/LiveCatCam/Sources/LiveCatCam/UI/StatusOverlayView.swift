@@ -5,125 +5,224 @@ struct StatusOverlayView: View {
 
     var body: some View {
         VStack {
+            // MARK: - Top bar
+            topBar
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+
             Spacer()
-            HStack(spacing: 16) {
-                // Tracking state
-                StatusBadge(
-                    icon: trackingIcon,
-                    label: appState.trackingState.rawValue.uppercased(),
-                    color: trackingColor
-                )
 
-                // Cat count
-                StatusBadge(
-                    icon: "cat.fill",
-                    label: "\(appState.catCount)",
-                    color: appState.catCount > 0 ? .green : .gray
-                )
+            // MARK: - Bottom bar
+            bottomBar
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+        }
+    }
 
-                // Activity score
-                StatusBadge(
-                    icon: "bolt.fill",
-                    label: String(format: "%.0f", appState.activityScore),
-                    color: scoreColor
-                )
+    // MARK: - Top Bar
 
-                Spacer()
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            // LIVE badge
+            liveBadge
 
-                // FPS
-                StatusBadge(
-                    icon: "video.fill",
-                    label: String(format: "%.0f", appState.currentFPS),
-                    color: fpsColor
-                )
-
-                // Connection
-                StatusBadge(
-                    icon: appState.isConnected ? "wifi" : "wifi.slash",
-                    label: appState.isConnected ? "ON" : "OFF",
-                    color: appState.isConnected ? .green : .red
-                )
+            // Elapsed time
+            if appState.isLive {
+                Text(appState.formattedTime)
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(.ultraThinMaterial)
 
-            // Motor position bar
-            HStack(spacing: 8) {
-                Image(systemName: "arrow.left.and.right")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(String(format: "P:%.0f T:%.0f", appState.motorPan, appState.motorTilt))
-                    .font(.caption2.monospaced())
-                    .foregroundStyle(.secondary)
+            Spacer()
 
-                Spacer()
-
-                if appState.thermalState == .critical {
-                    Label("HOT", systemImage: "thermometer.sun.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.red)
+            // Cat count
+            if appState.catCount > 0 {
+                HStack(spacing: 3) {
+                    Image(systemName: "cat.fill")
+                        .font(.system(size: 11))
+                    Text("\(appState.catCount)")
+                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 }
+                .foregroundStyle(.green)
+            }
 
-                if appState.isStreaming {
-                    Label("SRT", systemImage: "dot.radiowaves.left.and.right")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
+            // FPS
+            Text("\(Int(appState.currentFPS))fps")
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .foregroundStyle(appState.currentFPS >= 25 ? .white.opacity(0.6) : .yellow)
+
+            // Battery
+            #if os(iOS)
+            HStack(spacing: 3) {
+                Image(systemName: appState.batteryIcon)
+                    .font(.system(size: 11))
+                Text("\(Int(appState.batteryLevel * 100))%")
+                    .font(.system(size: 11, weight: .medium))
+            }
+            .foregroundStyle(appState.batteryColor)
+            #endif
+        }
+    }
+
+    // MARK: - LIVE Badge
+
+    private var liveBadge: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(appState.isLive ? Color(red: 1, green: 0.23, blue: 0.19) : .white.opacity(0.45))
+                .frame(width: 8, height: 8)
+                .modifier(PulseModifier(isActive: appState.isLive))
+
+            Text(appState.isLive ? "LIVE" : "IDLE")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(appState.isLive ? .white : .white.opacity(0.45))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(
+            Capsule()
+                .fill(appState.isLive ? Color(red: 1, green: 0.23, blue: 0.19).opacity(0.85) : .white.opacity(0.15))
+        )
+    }
+
+    // MARK: - Bottom Bar
+
+    private var bottomBar: some View {
+        HStack(spacing: 0) {
+            // Mic button
+            OverlayButton(icon: appState.isMuted ? "mic.slash.fill" : "mic.fill",
+                          color: appState.isMuted ? .red : .white) {
+                appState.isMuted.toggle()
+                #if os(iOS)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                #endif
+            }
+
+            Spacer()
+
+            // Connection status
+            Image(systemName: appState.isConnected ? "wifi" : "wifi.slash")
+                .font(.system(size: 13))
+                .foregroundStyle(appState.isConnected ? .green : .white.opacity(0.35))
+
+            Spacer()
+
+            // Start/Stop button (center)
+            startStopButton
+
+            Spacer()
+
+            // Zoom indicator
+            Text(String(format: "%.1fx", appState.currentZoom))
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.7))
+
+            Spacer()
+
+            // Settings gear
+            OverlayButton(icon: "gearshape.fill", color: .white) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    appState.showSettings.toggle()
+                }
+                #if os(iOS)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                #endif
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.black.opacity(0.45))
+        )
+    }
+
+    // MARK: - Start/Stop Button
+
+    private var startStopButton: some View {
+        Button {
+            Task {
+                if appState.isLive {
+                    await appState.stopStreaming()
+                    #if os(iOS)
+                    let gen = UIImpactFeedbackGenerator(style: .medium)
+                    gen.impactOccurred()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { gen.impactOccurred() }
+                    #endif
+                } else {
+                    await appState.startStreaming()
+                    #if os(iOS)
+                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                    #endif
                 }
             }
-            .padding(.horizontal)
-            .padding(.bottom, 4)
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(.white.opacity(0.5), lineWidth: 3)
+                    .frame(width: 56, height: 56)
+
+                if appState.isLive {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(red: 1, green: 0.23, blue: 0.19))
+                        .frame(width: 22, height: 22)
+                } else {
+                    Circle()
+                        .fill(Color(red: 1, green: 0.23, blue: 0.19))
+                        .frame(width: 44, height: 44)
+                }
+            }
         }
-    }
-
-    // MARK: - Computed styles
-
-    private var trackingIcon: String {
-        switch appState.trackingState {
-        case .idle: return "pause.circle"
-        case .searching: return "magnifyingglass"
-        case .tracking: return "scope"
-        case .lost: return "questionmark.circle"
-        }
-    }
-
-    private var trackingColor: Color {
-        switch appState.trackingState {
-        case .idle: return .gray
-        case .searching: return .yellow
-        case .tracking: return .green
-        case .lost: return .orange
-        }
-    }
-
-    private var scoreColor: Color {
-        if appState.activityScore >= 70 { return .red }
-        if appState.activityScore >= 40 { return .orange }
-        if appState.activityScore >= 10 { return .yellow }
-        return .gray
-    }
-
-    private var fpsColor: Color {
-        if appState.currentFPS >= 25 { return .green }
-        if appState.currentFPS >= 15 { return .yellow }
-        return .red
+        .buttonStyle(ScaleButtonStyle())
     }
 }
 
-// MARK: - Status Badge component
+// MARK: - Overlay Button
 
-struct StatusBadge: View {
+struct OverlayButton: View {
     let icon: String
-    let label: String
-    let color: Color
+    var color: Color = .white
+    let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
+        Button(action: action) {
             Image(systemName: icon)
-                .font(.caption)
-            Text(label)
-                .font(.caption.monospaced())
+                .font(.system(size: 18))
+                .foregroundStyle(color)
+                .frame(width: 44, height: 44)
         }
-        .foregroundStyle(color)
+        .buttonStyle(ScaleButtonStyle())
+    }
+}
+
+// MARK: - Scale Button Style
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Pulse Animation
+
+struct PulseModifier: ViewModifier {
+    let isActive: Bool
+    @State private var pulsing = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isActive ? (pulsing ? 0.3 : 1.0) : 1.0)
+            .onAppear {
+                if isActive { pulsing = true }
+            }
+            .onChange(of: isActive) { _, active in
+                pulsing = active
+            }
+            .animation(
+                isActive ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default,
+                value: pulsing
+            )
     }
 }

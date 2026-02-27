@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>ko</string>
+	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>LiveCatCam</string>
+	<string>OLiveCam</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,17 +27,17 @@
 		<string>_http._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>LiveCatCam은 고양이를 실시간으로 감지하고 추적하기 위해 카메라를 사용합니다.</string>
+	<string>OLiveCam needs camera access to stream video to OBS</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>LiveCatCam은 로컬 서버에 영상과 메타데이터를 전송하기 위해 네트워크를 사용합니다.</string>
+	<string>OLiveCam needs local network access to send video to your computer</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>LiveCatCam은 환경 오디오를 스트리밍에 포함하기 위해 마이크를 사용합니다.</string>
+	<string>OLiveCam needs microphone access to stream audio to OBS</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
-		<string>processing</string>
-		<string>external-accessory</string>
 	</array>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiredDeviceCapabilities</key>
@@ -46,7 +46,8 @@
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
 	</array>
 </dict>
 </plist>
