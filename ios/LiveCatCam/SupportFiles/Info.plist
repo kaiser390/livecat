@@ -32,10 +32,6 @@
 	<string>OLiveCam needs local network access to send video to your computer</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>OLiveCam needs microphone access to stream audio to OBS</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-	</array>
 	<key>CFBundleIconName</key>
 	<string>AppIcon</string>
 	<key>UILaunchScreen</key>

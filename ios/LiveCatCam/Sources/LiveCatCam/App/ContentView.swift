@@ -39,7 +39,8 @@ struct ContentView: View {
                     .transition(.move(edge: .trailing))
             }
 
-            // Debug log overlay (visible when controls hidden)
+            // Debug log overlay (only in debug builds)
+            #if DEBUG
             if !appState.debugLog.isEmpty {
                 VStack {
                     Spacer()
@@ -52,6 +53,7 @@ struct ContentView: View {
                 }
                 .allowsHitTesting(false)
             }
+            #endif
         }
         .preferredColorScheme(.dark)
         #if os(iOS)
