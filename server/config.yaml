@@ -219,6 +219,17 @@ cats:
     hashtags_ko: ["#토토", "#턱시도고양이"]
     hashtags_en: ["#toto", "#tuxedocat"]
 
+# --- Post-Live Pipeline ---
+post_live:
+  enabled: true
+  recording_dir: "C:/Users/Computer/Videos"
+  output_dir: "D:/livecat/output"
+  num_shorts: 3
+  short_duration_sec: 60
+  activity_sample_fps: 2.0
+  longform_privacy: "public"
+  shorts_privacy: "public"
+
 # --- Web Dashboard ---
 web:
   host: "0.0.0.0"

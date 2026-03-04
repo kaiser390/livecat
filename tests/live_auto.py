@@ -10,9 +10,16 @@ Usage:
 """
 import asyncio
 import json
+import locale
+import os
+import subprocess
 import sys
 import time
 from datetime import datetime
+
+# Fix OBS WebSocket locale issue on Windows
+os.environ['LANG'] = 'en_US.UTF-8'
+os.environ['LC_ALL'] = 'en_US.UTF-8'
 
 try:
     import websockets
@@ -45,7 +52,7 @@ def ts():
 
 
 def obs_start():
-    """Start OBS streaming"""
+    """Start OBS streaming + recording"""
     global is_obs_streaming, stream_start_time
     if is_obs_streaming:
         return True
@@ -53,23 +60,25 @@ def obs_start():
     try:
         ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
         status = ws.get_stream_status()
-        if status.output_active:
-            ws.disconnect()
-            is_obs_streaming = True
-            stream_start_time = time.time()
+        already_streaming = status.output_active
+        if not already_streaming:
+            ws.start_stream()
+            print(f"  [{ts()}] OBS STREAM STARTED")
+        else:
             print(f"  [{ts()}] OBS already streaming")
-            return True
-        ws.disconnect()
-    except Exception:
-        pass
-
-    try:
-        ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
-        ws.start_stream()
+        # Always start recording if not already recording
+        try:
+            rec_status = ws.get_record_status()
+            if not rec_status.output_active:
+                ws.start_record()
+                print(f"  [{ts()}] OBS RECORDING STARTED (local)")
+            else:
+                print(f"  [{ts()}] OBS already recording")
+        except Exception as e:
+            print(f"  [{ts()}] Recording start skipped: {e}")
         ws.disconnect()
         is_obs_streaming = True
         stream_start_time = time.time()
-        print(f"  [{ts()}] OBS STREAM STARTED")
         return True
     except Exception as e:
         print(f"  [{ts()}] OBS start failed: {e}")
@@ -77,7 +86,7 @@ def obs_start():
 
 
 def obs_stop():
-    """Stop OBS streaming"""
+    """Stop OBS streaming + recording"""
     global is_obs_streaming, stream_start_time
     if not is_obs_streaming:
         return
@@ -90,6 +99,21 @@ def obs_stop():
             m, s = divmod(duration, 60)
             print(f"  [{ts()}] Stream duration: {m:.0f}m {s:.0f}s")
             ws.stop_stream()
+        # Stop local recording
+        try:
+            rec_status = ws.get_record_status()
+            if rec_status.output_active:
+                result = ws.stop_record()
+                path = getattr(result, 'output_path', '')
+                print(f"  [{ts()}] OBS RECORDING SAVED: {path}")
+                if path:
+                    subprocess.Popen(
+                        [sys.executable, "-u", "D:/livecat/post_live.py", path, "--num-shorts", "2", "--dry-run"],
+                        creationflags=0x00000008,  # DETACHED_PROCESS
+                    )
+                    print(f"  [{ts()}] Post-live pipeline launched")
+        except Exception:
+            pass
         ws.disconnect()
     except Exception as e:
         print(f"  [{ts()}] OBS stop failed: {e}")
@@ -236,21 +260,29 @@ async def main():
     print("  No metadata 5s     -> OBS OFF -> YouTube auto-ends")
     print()
 
-    # Verify OBS connection
-    try:
-        ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
-        status = ws.get_stream_status()
-        streaming = status.output_active
-        print(f"  [OBS] Connected (currently {'LIVE' if streaming else 'OFF'})")
-        if streaming:
-            try:
-                ws.stop_stream()
-                print(f"  [OBS] Stopped existing stream for clean start")
-            except Exception:
-                pass
-        ws.disconnect()
-    except Exception as e:
-        print(f"  [OBS] Connection failed: {e}")
+    # Verify OBS connection (retry up to 60s for OBS to start)
+    obs_connected = False
+    print(f"  [OBS] Connecting to OBS...", end="", flush=True)
+    for attempt in range(30):
+        try:
+            ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
+            status = ws.get_stream_status()
+            streaming = status.output_active
+            print(f" OK (currently {'LIVE' if streaming else 'OFF'})")
+            if streaming:
+                try:
+                    ws.stop_stream()
+                    print(f"  [OBS] Stopped existing stream for clean start")
+                except Exception:
+                    pass
+            ws.disconnect()
+            obs_connected = True
+            break
+        except Exception:
+            print(".", end="", flush=True)
+            await asyncio.sleep(2)
+    if not obs_connected:
+        print(" FAILED")
         print(f"  Make sure OBS is running with WebSocket enabled (port {OBS_PORT})")
         return
 

@@ -111,16 +111,18 @@ class YouTubeUploader:
         description: str = "",
         tags: Optional[list[str]] = None,
         category_id: int = 15,
+        is_short: bool = True,
     ) -> UploadResult:
-        """YouTube Shorts 동영상을 업로드한다.
+        """YouTube 동영상을 업로드한다.
 
         Args:
-            video_path: 업로드할 동영상 파일 경로 (9:16, <=60초).
+            video_path: 업로드할 동영상 파일 경로.
             thumbnail_path: 커스텀 썸네일 이미지 경로 (optional).
             title: 동영상 제목 (최대 100자).
             description: 동영상 설명.
             tags: 태그 목록.
             category_id: YouTube 카테고리 ID (기본 15=Pets & Animals).
+            is_short: True면 Shorts (#Shorts 태그 추가), False면 롱폼.
 
         Returns:
             UploadResult: 업로드 결과.
@@ -141,8 +143,9 @@ class YouTubeUploader:
                 error_message="Daily YouTube API quota exceeded",
             )
 
-        # Shorts 표시: 제목에 #Shorts 추가
-        title = self._ensure_shorts_tag(title)
+        # Shorts 표시: is_short=True일 때만 제목에 #Shorts 추가
+        if is_short:
+            title = self._ensure_shorts_tag(title)
 
         try:
             # OAuth 인증
@@ -183,7 +186,10 @@ class YouTubeUploader:
                 else:
                     logger.warning(f"Thumbnail file not found: {thumbnail_path}")
 
-            url = f"https://youtube.com/shorts/{video_id}"
+            if is_short:
+                url = f"https://youtube.com/shorts/{video_id}"
+            else:
+                url = f"https://youtube.com/watch?v={video_id}"
             logger.bind(event=True).info(
                 f"YouTube upload success — id={video_id}, title={title[:50]}"
             )

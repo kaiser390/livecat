@@ -163,15 +163,18 @@ class VerticalConverter:
             # 2. Kalman filter 스무딩
             smoothed_center_x = self._smooth_positions(crop_positions)
 
-            # 3. 최종 크롭 X 결정 (평균값 — 단일 crop 필터로 적용)
-            avg_center_x = self._compute_crop_center(smoothed_center_x)
-
-            # 4. ffmpeg 크롭 + 스케일 적용
-            await self._apply_crop(clip_path, output_path, avg_center_x)
+            # 3. 동적 크롭 적용 (프레임별 크롭 중심 이동)
+            if len(smoothed_center_x) > 1:
+                await self._apply_dynamic_crop(
+                    clip_path, output_path, crop_positions, smoothed_center_x
+                )
+            else:
+                avg_center_x = self._compute_crop_center(smoothed_center_x)
+                await self._apply_crop(clip_path, output_path, avg_center_x)
 
             logger.info(
                 f"[VerticalConverter] Done: {output_path.name} "
-                f"(crop_center_x={avg_center_x})"
+                f"(dynamic crop, {len(smoothed_center_x)} keyframes)"
             )
             return output_path
 
@@ -272,6 +275,7 @@ class VerticalConverter:
         YOLOv8로 고양이 감지.
 
         Returns (center_x, confidence) 또는 None.
+        고양이가 여러 마리면 전체를 포함하는 중심점 반환.
         COCO 클래스 15 = cat.
         """
         if self._model is None:
@@ -280,8 +284,7 @@ class VerticalConverter:
         try:
             results = self._model(frame, verbose=False, conf=0.3)
 
-            best_cat = None
-            best_conf = 0.0
+            cat_boxes = []
 
             for result in results:
                 boxes = result.boxes
@@ -293,20 +296,33 @@ class VerticalConverter:
                     conf = float(boxes.conf[i].item())
 
                     # COCO class 15 = cat
-                    if cls_id == 15 and conf > best_conf:
-                        # bbox: x1, y1, x2, y2
+                    if cls_id == 15:
                         x1, y1, x2, y2 = boxes.xyxy[i].cpu().numpy()
-                        center_x = (x1 + x2) / 2
+                        cat_boxes.append((x1, y1, x2, y2, conf))
 
-                        # padding 적용 (고양이 주변 여유 공간)
-                        bbox_w = (x2 - x1) * self.padding_ratio
-                        # 크롭 영역이 고양이를 충분히 포함하는지 확인
-                        if bbox_w <= CROP_W:
-                            best_cat = center_x
-                            best_conf = conf
+            if cat_boxes:
+                # 모든 고양이를 포함하는 바운딩 박스 계산
+                all_x1 = min(b[0] for b in cat_boxes)
+                all_y1 = min(b[1] for b in cat_boxes)
+                all_x2 = max(b[2] for b in cat_boxes)
+                all_y2 = max(b[3] for b in cat_boxes)
+                best_conf = max(b[4] for b in cat_boxes)
 
-            if best_cat is not None:
-                return (best_cat, best_conf)
+                # 패딩 적용 — 고양이 전체 몸이 크롭 안에 들어오도록
+                pad_w = (all_x2 - all_x1) * (self.padding_ratio - 1.0) / 2
+                pad_h = (all_y2 - all_y1) * (self.padding_ratio - 1.0) / 2
+                padded_x1 = max(0, all_x1 - pad_w)
+                padded_x2 = min(SRC_W, all_x2 + pad_w)
+
+                center_x = (padded_x1 + padded_x2) / 2
+
+                # 패딩된 고양이 폭이 크롭보다 작아야 의미 있음
+                padded_w = padded_x2 - padded_x1
+                if padded_w <= CROP_W:
+                    return (center_x, best_conf)
+                else:
+                    # 크롭보다 넓으면 그래도 중심은 반환
+                    return (center_x, best_conf)
 
         except Exception as e:
             logger.debug(f"YOLO detection error: {e}")
@@ -363,6 +379,104 @@ class VerticalConverter:
         avg_x = max(MIN_X, min(MAX_X, avg_x))
 
         return int(round(avg_x))
+
+    async def _apply_dynamic_crop(
+        self,
+        input_path: Path,
+        output_path: Path,
+        crop_positions: list[CropPosition],
+        smoothed_positions: list[float],
+    ):
+        """
+        프레임별 동적 크롭 — 고양이를 따라가는 smooth pan 효과.
+
+        Kalman-smoothed 크롭 중심을 sendcmd 필터로 프레임별 적용.
+        """
+        import cv2
+
+        cap = cv2.VideoCapture(str(input_path))
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        sample_interval = max(1, int(fps / 10))
+        cap.release()
+
+        # 모든 프레임에 대한 crop_x 보간
+        all_crop_x = []
+        pos_idx = 0
+        for f in range(total_frames):
+            # 현재 프레임에 해당하는 smoothed position 인덱스
+            target_idx = f // sample_interval
+            target_idx = min(target_idx, len(smoothed_positions) - 1)
+
+            # 다음 인덱스와 선형 보간
+            next_idx = min(target_idx + 1, len(smoothed_positions) - 1)
+            t = (f % sample_interval) / sample_interval if sample_interval > 1 else 0
+            cx = smoothed_positions[target_idx] * (1 - t) + smoothed_positions[next_idx] * t
+
+            cx = max(MIN_X, min(MAX_X, cx))
+            crop_left = max(0, int(cx) - HALF_CROP)
+            crop_left = min(crop_left, SRC_W - CROP_W)
+            all_crop_x.append(crop_left)
+
+        # crop_x 값을 텍스트 파일로 저장 → ffmpeg의 sendcmd 사용
+        # 대신 더 간단한 방법: crop 필터에 표현식 사용
+        # ffmpeg crop 필터는 표현식을 지원하지만 복잡한 경로는 어려움
+        # → 가장 안정적인 방법: 프레임별 처리 with cv2
+
+        out_w, out_h = self.output_resolution
+
+        cap = cv2.VideoCapture(str(input_path))
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        temp_video = input_path.with_stem(f"{input_path.stem}_dyncrop_temp")
+        writer = cv2.VideoWriter(str(temp_video), fourcc, fps, (out_w, out_h))
+
+        frame_idx = 0
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            crop_left = all_crop_x[min(frame_idx, len(all_crop_x) - 1)]
+            cropped = frame[0:SRC_H, crop_left:crop_left + CROP_W]
+            resized = cv2.resize(cropped, (out_w, out_h), interpolation=cv2.INTER_LANCZOS4)
+            writer.write(resized)
+            frame_idx += 1
+
+        cap.release()
+        writer.release()
+
+        # cv2는 오디오를 못 쓰므로 ffmpeg로 오디오 합성
+        cmd = [
+            "ffmpeg", "-y",
+            "-i", str(temp_video),
+            "-i", str(input_path),
+            "-map", "0:v:0",
+            "-map", "1:a:0?",
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-crf", "20",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-movflags", "+faststart",
+            str(output_path),
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+
+        # 임시 파일 정리
+        if temp_video.exists():
+            temp_video.unlink()
+
+        if proc.returncode != 0:
+            error_msg = stderr.decode("utf-8", errors="replace")[-500:]
+            raise RuntimeError(
+                f"ffmpeg audio merge failed (rc={proc.returncode}): {error_msg}"
+            )
 
     async def _apply_crop(
         self,

@@ -50,6 +50,58 @@ enum CoordinateMapper {
         return targetAngles(for: center, currentPan: currentPan, currentTilt: currentTilt)
     }
 
+    // MARK: - Dead Zone
+
+    /// Dead zone: normalized center region where motor commands are suppressed.
+    /// Object within this region is "close enough" to center — no motor movement needed.
+    static let deadZone = CGRect(x: 0.35, y: 0.35, width: 0.30, height: 0.30)
+
+    /// Check if a normalized point is inside the dead zone (center of frame).
+    static func isInDeadZone(_ point: CGPoint) -> Bool {
+        deadZone.contains(point)
+    }
+
+    /// Check if a bbox center is inside the dead zone.
+    static func isInDeadZone(bbox: CGRect) -> Bool {
+        let center = CGPoint(x: bbox.midX, y: bbox.midY)
+        return isInDeadZone(center)
+    }
+
+    // MARK: - Speed-Adaptive Duration
+
+    /// Convert object speed (normalized units/frame) to motor duration parameter.
+    /// Faster objects → shorter duration (faster motor response).
+    /// - Parameter speed: Object movement speed in normalized coords per frame.
+    /// - Returns: Duration in seconds for motor movement.
+    static func adaptiveDuration(for speed: Double) -> TimeInterval {
+        switch speed {
+        case ..<0.005:  return 1.0    // Stationary — slow, smooth correction
+        case ..<0.02:   return 0.5    // Slow movement
+        case ..<0.05:   return 0.3    // Normal movement
+        case ..<0.10:   return 0.15   // Fast movement
+        default:        return 0.08   // Very fast (thrown object, running cat)
+        }
+    }
+
+    // MARK: - Search Direction
+
+    /// Calculate search orientation delta from last known velocity direction.
+    /// Returns small angle deltas for slow search movement.
+    static func searchDelta(
+        lastVelocityX: Double,
+        lastVelocityY: Double
+    ) -> (panDelta: Double, tiltDelta: Double) {
+        // Normalize direction, apply small search step (5 degrees)
+        let magnitude = sqrt(lastVelocityX * lastVelocityX + lastVelocityY * lastVelocityY)
+        guard magnitude > 0.001 else {
+            return (panDelta: 0, tiltDelta: 0)
+        }
+        let searchStep = 5.0  // degrees per search step
+        let normX = lastVelocityX / magnitude
+        let normY = lastVelocityY / magnitude
+        return (panDelta: normX * searchStep, tiltDelta: normY * searchStep)
+    }
+
     /// Convert Vision bbox to server cat_positions format.
     static func toCatPosition(bbox: CGRect, confidence: Double) -> MetadataMessage.CatPosition {
         MetadataMessage.CatPosition(

@@ -15,6 +15,7 @@ final class AppState {
     let cameraManager = CameraManager()
     let catDetector = CatDetector()
     let catTracker = CatTracker()
+    let tapToTrackManager = TapToTrackManager()
     let activityScorer = ActivityScorer()
     let trackingStateMachine = TrackingStateMachine()
     let connectionMonitor = ConnectionMonitor()
@@ -39,6 +40,14 @@ final class AppState {
     var motorTilt: Double = 0
     var thermalState: ProcessInfo.ThermalState = .nominal
     var debugLog: String = ""
+
+    // MARK: - Tap-to-Track state
+    var isTapTracking = false
+    var tapTrackBBox: CGRect?
+    var tapTrackState: TapToTrackManager.State = .idle
+
+    // Latest pixel buffer for tap-to-track initialization
+    private var latestPixelBuffer: CVPixelBuffer?
 
     // MARK: - UI state
     var showControls = true
@@ -118,6 +127,11 @@ final class AppState {
         UIDevice.current.isBatteryMonitoringEnabled = true
         #endif
         startThermalMonitoring()
+
+        // Start DockKit accessory monitoring (non-blocking)
+        if let motor = motorController {
+            Task { await motor.connect() }
+        }
     }
 
     func stop() async {
@@ -306,6 +320,9 @@ final class AppState {
     // MARK: - Frame processing pipeline
 
     private func processFrame(pixelBuffer: CVPixelBuffer, timestamp: CMTime) async {
+        // Store latest pixel buffer for tap-to-track initialization
+        latestPixelBuffer = pixelBuffer
+
         // 1. Detect cats
         let detection = await catDetector.detect(in: pixelBuffer)
 
@@ -313,19 +330,72 @@ final class AppState {
         let cats = await catTracker.update(detections: detection)
         let catDetected = !cats.isEmpty
 
-        // 3. Update tracking state
-        let state = await trackingStateMachine.update(catDetected: catDetected)
+        // 3. Tap-to-Track processing (if active)
+        let frameSize = CGSize(width: config.resolution.width, height: config.resolution.height)
+        var tapResult: TapToTrackManager.TrackResult = .idle
+
+        if isTapTracking {
+            tapResult = await tapToTrackManager.processFrame(pixelBuffer)
+
+            switch tapResult.state {
+            case .tracking:
+                // Object visible — send bbox to motor with speed-adaptive control
+                if let bbox = tapResult.bbox {
+                    try? await motorController?.trackWithSpeed(
+                        boundingBox: bbox,
+                        in: frameSize,
+                        objectSpeed: tapResult.objectSpeed
+                    )
+                }
+
+            case .searching:
+                // Object lost — move motor in last known direction
+                let delta = CoordinateMapper.searchDelta(
+                    lastVelocityX: tapResult.lastVelocityX,
+                    lastVelocityY: tapResult.lastVelocityY
+                )
+                let duration = 1.0  // Slow search
+                try? await motorController?.searchInDirection(
+                    panDelta: delta.panDelta,
+                    tiltDelta: delta.tiltDelta,
+                    duration: duration
+                )
+
+            case .idle:
+                // Tap-to-track ended (timeout or manual stop)
+                await MainActor.run {
+                    self.isTapTracking = false
+                    self.tapTrackBBox = nil
+                    self.tapTrackState = .idle
+                }
+                try? await motorController?.stopMotor()
+            }
+
+            // Update tracking state from tap-to-track
+            let state = await trackingStateMachine.updateFromTapTrack(tapResult.state)
+            await MainActor.run {
+                self.tapTrackBBox = tapResult.bbox
+                self.tapTrackState = tapResult.state
+                self.trackingState = state
+            }
+        } else {
+            // 3b. Normal cat tracking state
+            let state = await trackingStateMachine.update(catDetected: catDetected)
+            await MainActor.run {
+                self.trackingState = state
+            }
+
+            // 5. Motor tracking — follow first detected cat (auto mode)
+            if let primaryCat = cats.first {
+                try? await motorController?.track(
+                    boundingBox: primaryCat.bbox,
+                    in: frameSize
+                )
+            }
+        }
 
         // 4. Score activity
         let scoreResult = await activityScorer.score(cats: cats, cameraID: config.camID)
-
-        // 5. Motor tracking (track first detected cat)
-        if let primaryCat = cats.first {
-            try? await motorController?.track(
-                boundingBox: primaryCat.bbox,
-                in: CGSize(width: config.resolution.width, height: config.resolution.height)
-            )
-        }
 
         // 6. Encode video frame (only when streaming)
         if isLive {
@@ -350,15 +420,14 @@ final class AppState {
             }
         }
 
-        await metadataReporter?.updateTracking(state: state, score: normalizedScore)
+        await metadataReporter?.updateTracking(state: trackingState, score: normalizedScore)
         await metadataReporter?.updateCatPositions(catPositions)
         await metadataReporter?.updateCats(catInfos)
         await metadataReporter?.updateMotorPosition(pan: pan, tilt: tilt)
         await metadataReporter?.updateHuntSignals(huntSignals)
 
-        // 8. Update UI state (throttled to ~10Hz)
+        // 8. Update UI state
         await MainActor.run {
-            self.trackingState = state
             self.activityScore = normalizedScore
             self.currentFPS = self.cameraManager.currentFPS
             self.catCount = cats.count
@@ -376,6 +445,54 @@ final class AppState {
                 guard let self, let start = self.streamStartTime else { return }
                 self.elapsedSeconds = Int(Date().timeIntervalSince(start))
             }
+        }
+    }
+
+    // MARK: - Tap-to-Track
+
+    /// Handle tap on camera view. normalizedPoint is in Vision coords (0,0)=bottom-left.
+    func handleTapToTrack(at normalizedPoint: CGPoint) {
+        Task {
+            // Check if tap is on a currently tracked cat
+            let cats = await catTracker.currentCats
+            var hitCat: CatTracker.TrackedCat?
+            for cat in cats {
+                if cat.bbox.contains(normalizedPoint) {
+                    hitCat = cat
+                    break
+                }
+            }
+
+            if let cat = hitCat {
+                // Tapped on a detected cat — track it
+                await tapToTrackManager.startTracking(bbox: cat.bbox)
+                isTapTracking = true
+                addDebug("TAP-TRACK: cat \(cat.id)")
+            } else if isTapTracking {
+                // Already tracking, tapped on empty area — stop tracking
+                await tapToTrackManager.stopTracking()
+                isTapTracking = false
+                tapTrackBBox = nil
+                tapTrackState = .idle
+                try? await motorController?.stopMotor()
+                addDebug("TAP-TRACK: stopped")
+            } else if let pixelBuffer = latestPixelBuffer {
+                // Tap on arbitrary object — start object tracking
+                await tapToTrackManager.startTracking(at: normalizedPoint, in: pixelBuffer)
+                isTapTracking = true
+                addDebug("TAP-TRACK: object at (\(String(format: "%.2f", normalizedPoint.x)), \(String(format: "%.2f", normalizedPoint.y)))")
+            }
+        }
+    }
+
+    /// Stop tap-to-track (e.g., from UI button).
+    func stopTapToTrack() {
+        Task {
+            await tapToTrackManager.stopTracking()
+            isTapTracking = false
+            tapTrackBBox = nil
+            tapTrackState = .idle
+            try? await motorController?.stopMotor()
         }
     }
 

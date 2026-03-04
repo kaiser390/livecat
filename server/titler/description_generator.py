@@ -34,27 +34,27 @@ class DescriptionGenerator:
     - API 실패 시 내장 템플릿 폴백
     """
 
-    # 이벤트 타입 → 한글
+    # Event type → English
     EVENT_KO: dict[str, str] = {
-        "climb": "나무등반",
-        "jump": "점프",
-        "run": "달리기",
-        "interact": "함께 놀기",
-        "hunt_attempt": "사냥",
-        "sleep": "낮잠",
-        "groom": "그루밍",
-        "sunbathe": "일광욕",
-        "fail": "실패",
+        "climb": "climbing",
+        "jump": "jumping",
+        "run": "running",
+        "interact": "playtime",
+        "hunt_attempt": "hunting",
+        "sleep": "napping",
+        "groom": "grooming",
+        "sunbathe": "sunbathing",
+        "fail": "fail",
     }
 
     CAT_DISPLAY: dict[str, str] = {
-        "nana": "나나",
-        "toto": "토토",
+        "nana": "Nana",
+        "toto": "Toto",
     }
 
     CAT_INTRO: dict[str, str] = {
-        "nana": "호랑이 무늬의 활발한 나나(Nana)",
-        "toto": "턱시도 무늬의 영리한 토토(Toto)",
+        "nana": "Nana, an adventurous tabby",
+        "toto": "Toto, a clever tuxedo cat",
     }
 
     def __init__(self, config: dict) -> None:
@@ -158,7 +158,10 @@ class DescriptionGenerator:
 
     def _build_prompt(self, metadata: dict, platform: str) -> str:
         """description.md 템플릿을 로드하고 메타데이터로 채운다."""
-        prompt_path = self._prompts_dir / "description.md"
+        if platform in ("tiktok", "shorts"):
+            prompt_path = self._prompts_dir / "description_shorts.md"
+        else:
+            prompt_path = self._prompts_dir / "description.md"
 
         if not prompt_path.exists():
             logger.warning(f"Description prompt not found: {prompt_path}")
@@ -177,7 +180,7 @@ class DescriptionGenerator:
 
         cats_display = ", ".join(
             self.CAT_DISPLAY.get(c, c) for c in cats_raw
-        ) or "나나, 토토"
+        ) or "Nana, Toto"
 
         time_of_day = self._get_time_of_day(timestamp)
         event_ko = self.EVENT_KO.get(event_type, event_type)
@@ -204,9 +207,8 @@ class DescriptionGenerator:
         event_type = metadata.get("event_type", "unknown")
         cats_raw = metadata.get("cats", [])
 
-        event_ko = self.EVENT_KO.get(event_type, "일상")
+        event_en = self.EVENT_KO.get(event_type, "daily life")
 
-        # 등장 고양이 소개
         cat_intros = []
         for c in cats_raw:
             intro = self.CAT_INTRO.get(c)
@@ -219,41 +221,39 @@ class DescriptionGenerator:
                 self.CAT_INTRO["toto"],
             ]
 
-        cats_intro_str = "과 ".join(cat_intros)
+        cats_intro_str = " and ".join(cat_intros)
 
-        # 이벤트별 서두
         opening_lines = {
-            "climb": "오늘도 나무등반에 도전하는 용감한 마당 고양이!",
-            "jump": "놀라운 점프력! 역시 고양이는 운동 천재!",
-            "run": "전력 질주하는 모습을 포착했어요!",
-            "interact": "두 고양이가 함께 노는 귀여운 순간!",
-            "hunt_attempt": "야생의 본능이 깨어나는 순간!",
-            "sleep": "세상에서 제일 평화로운 꿀잠 타임",
-            "groom": "그루밍하는 모습도 이렇게 귀여울 수가",
+            "climb": "A brave outdoor cat takes on tree climbing today!",
+            "jump": "Amazing jumping skills! Cats are natural athletes!",
+            "run": "Full speed sprint caught on camera!",
+            "interact": "Two cats playing together — pure cuteness!",
+            "hunt_attempt": "Wild instincts awakened!",
+            "sleep": "The most peaceful nap time ever",
+            "groom": "Even grooming looks this adorable",
         }
 
-        opening = opening_lines.get(event_type, f"마당 고양이의 {event_ko} 일상!")
+        opening = opening_lines.get(event_type, f"Outdoor cats' {event_en} moments!")
 
-        # 구독 유도 (CTA)
         cta_options = [
-            "좋아요와 구독 부탁드려요!",
-            "구독하고 나나 & 토토의 일상을 함께해요!",
-            "좋아요 누르고 다음 영상도 기대해주세요!",
+            "Like and subscribe for more!",
+            "Subscribe to follow Nana & Toto's daily life!",
+            "Hit like and stay tuned for the next video!",
         ]
         cta = random.choice(cta_options)
 
         if platform in ("tiktok", "shorts"):
             description = (
                 f"{opening}\n\n"
-                f"{cats_intro_str}의 {event_ko} 순간을 담았어요.\n\n"
-                f"팔로우하고 매일 귀여운 고양이 영상 받아보세요!"
+                f"Watch {cats_intro_str} in their {event_en} moment.\n\n"
+                f"Follow for daily cute cat videos!"
             )
         else:
             description = (
                 f"{opening}\n\n"
-                f"마당에 사는 {cats_intro_str}의 리얼한 일상을 담았습니다.\n"
-                f"매일 올라오는 고양이 영상, 놓치지 마세요!\n\n"
-                f"#고양이 #마당고양이 #catlife #고양이일상\n\n"
+                f"Real daily life of {cats_intro_str} living outdoors.\n"
+                f"New cat videos every day — don't miss out!\n\n"
+                f"#cat #outdoorcat #catlife #catdaily\n\n"
                 f"{cta}"
             )
 
@@ -273,15 +273,15 @@ class DescriptionGenerator:
 
             hour = dt.hour
             if 5 <= hour < 12:
-                return "아침"
+                return "morning"
             elif 12 <= hour < 17:
-                return "오후"
+                return "afternoon"
             elif 17 <= hour < 21:
-                return "저녁"
+                return "evening"
             else:
-                return "밤"
+                return "night"
         except Exception:
-            return "오후"
+            return "afternoon"
 
     def _get_client(self) -> Any | None:
         """Anthropic 클라이언트 지연 초기화."""

@@ -53,6 +53,29 @@ actor TrackingStateMachine {
         return state
     }
 
+    /// Update state based on TapToTrackManager state (for tap-to-track mode).
+    func updateFromTapTrack(_ tapState: TapToTrackManager.State) -> TrackingState {
+        let now = Date().timeIntervalSince1970
+        let oldState = state
+
+        let newState: TrackingState
+        switch tapState {
+        case .idle:
+            newState = .idle
+        case .tracking:
+            newState = .tracking
+        case .searching:
+            newState = .searching
+        }
+
+        if newState != state {
+            transition(to: newState, at: now)
+            onStateChange?(oldState, newState)
+        }
+
+        return state
+    }
+
     func forceState(_ newState: TrackingState) {
         let now = Date().timeIntervalSince1970
         transition(to: newState, at: now)

@@ -43,31 +43,30 @@ class TitleGenerator:
     - diskcache 기반 결과 캐싱
     """
 
-    # 이벤트 타입 → 한글 키워드
+    # Event type → English keyword
     EVENT_KO: dict[str, str] = {
-        "climb": "나무등반",
-        "jump": "점프",
-        "run": "달리기",
-        "interact": "함께 놀기",
-        "hunt_attempt": "사냥",
-        "sleep": "낮잠",
-        "groom": "그루밍",
-        "sunbathe": "일광욕",
-        "fail": "실패",
+        "climb": "climbing",
+        "jump": "jumping",
+        "run": "running",
+        "interact": "playtime",
+        "hunt_attempt": "hunting",
+        "sleep": "napping",
+        "groom": "grooming",
+        "sunbathe": "sunbathing",
+        "fail": "fail",
     }
 
-    # 고양이 ID → 표시 이름
+    # Cat ID → display name
     CAT_DISPLAY: dict[str, str] = {
-        "nana": "나나",
-        "toto": "토토",
+        "nana": "Nana",
+        "toto": "Toto",
     }
 
-    # 시간대 분류
     TIME_PERIODS: dict[str, str] = {
-        "morning": "아침",
-        "afternoon": "오후",
-        "evening": "저녁",
-        "night": "밤",
+        "morning": "morning",
+        "afternoon": "afternoon",
+        "evening": "evening",
+        "night": "night",
     }
 
     def __init__(self, config: dict) -> None:
@@ -263,6 +262,13 @@ class TitleGenerator:
             # 앞뒤 따옴표 제거
             cleaned = cleaned.strip('"').strip("'").strip()
 
+            # 서문/메타 텍스트 필터 ("~입니다:", "~있습니다:", "~드립니다:" 등)
+            if cleaned and any(
+                cleaned.endswith(suf)
+                for suf in ("입니다:", "있습니다:", "드립니다:", "하겠습니다:", "보세요:")
+            ):
+                continue
+
             if cleaned:
                 titles.append(cleaned)
 
@@ -284,26 +290,25 @@ class TitleGenerator:
 
         cats_str = " & ".join(
             self.CAT_DISPLAY.get(c, c) for c in cats_raw
-        ) or "나나 & 토토"
+        ) or "Nana & Toto"
 
-        event_ko = self.EVENT_KO.get(event_type, "일상")
+        event_en = self.EVENT_KO.get(event_type, "daily life")
 
-        # 플랫폼별 템플릿
         if platform in ("tiktok", "shorts"):
             templates = [
-                f"{cats_str}의 {event_ko} 순간!",
-                f"이게 바로 고양이지... {cats_str} {event_ko}",
-                f"{cats_str} {event_ko} 보고 가세요!",
-                f"마당 고양이 {cats_str}의 리얼 {event_ko}",
-                f"{event_ko}하는 {cats_str} 너무 귀여워",
+                f"{cats_str} {event_en} moment! #cat #shorts",
+                f"This is what cats do... {cats_str} {event_en} #catlife",
+                f"Watch {cats_str} {event_en}! #outdoorcat #shorts",
+                f"Outdoor cats {cats_str} real {event_en} #cat",
+                f"{cats_str} {event_en} is too cute #catlife #shorts",
             ]
         else:
             templates = [
-                f"[고양이 일상] {cats_str}의 {event_ko} 순간!",
-                f"{cats_str}가 {event_ko}을 한다고?! 마당고양이 브이로그",
-                f"마당 고양이 {cats_str} - 오늘의 {event_ko}",
-                f"{cats_str} {event_ko} 모음 | 고양이 일상",
-                f"귀여운 {cats_str}의 {event_ko} 순간 포착!",
+                f"[Cat Daily] {cats_str}'s {event_en} moment!",
+                f"{cats_str} {event_en}?! Outdoor Cat Vlog",
+                f"Outdoor Cats {cats_str} - Today's {event_en}",
+                f"{cats_str} {event_en} compilation | Cat Life",
+                f"Cute {cats_str} {event_en} caught on camera!",
             ]
 
         random.shuffle(templates)
@@ -331,7 +336,7 @@ class TitleGenerator:
             else:
                 return self.TIME_PERIODS["night"]
         except Exception:
-            return "오후"
+            return "afternoon"
 
     # ------------------------------------------------------------------
     # Cache
