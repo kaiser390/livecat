@@ -39,6 +39,7 @@ HTTP_PORT = 8082
 OBS_HOST = "localhost"
 OBS_PORT = 4455
 IDLE_TIMEOUT = 5  # seconds without metadata → stop OBS
+DRY_RUN = "--dry-run" in sys.argv  # skip YouTube streaming, record locally only
 
 # State
 clients = set()
@@ -59,14 +60,17 @@ def obs_start():
 
     try:
         ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
-        status = ws.get_stream_status()
-        already_streaming = status.output_active
-        if not already_streaming:
-            ws.start_stream()
-            print(f"  [{ts()}] OBS STREAM STARTED")
+        if DRY_RUN:
+            print(f"  [{ts()}] DRY RUN — skip YouTube stream, record only")
         else:
-            print(f"  [{ts()}] OBS already streaming")
-        # Always start recording if not already recording
+            status = ws.get_stream_status()
+            already_streaming = status.output_active
+            if not already_streaming:
+                ws.start_stream()
+                print(f"  [{ts()}] OBS STREAM STARTED")
+            else:
+                print(f"  [{ts()}] OBS already streaming")
+        # Always start recording
         try:
             rec_status = ws.get_record_status()
             if not rec_status.output_active:
@@ -93,12 +97,13 @@ def obs_stop():
 
     try:
         ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
-        status = ws.get_stream_status()
-        if status.output_active:
-            duration = status.output_duration // 1000
-            m, s = divmod(duration, 60)
-            print(f"  [{ts()}] Stream duration: {m:.0f}m {s:.0f}s")
-            ws.stop_stream()
+        if not DRY_RUN:
+            status = ws.get_stream_status()
+            if status.output_active:
+                duration = status.output_duration // 1000
+                m, s = divmod(duration, 60)
+                print(f"  [{ts()}] Stream duration: {m:.0f}m {s:.0f}s")
+                ws.stop_stream()
         # Stop local recording
         try:
             rec_status = ws.get_record_status()
@@ -108,10 +113,10 @@ def obs_stop():
                 print(f"  [{ts()}] OBS RECORDING SAVED: {path}")
                 if path:
                     subprocess.Popen(
-                        [sys.executable, "-u", "D:/livecat/post_live.py", path, "--num-shorts", "2", "--dry-run"],
+                        [sys.executable, "-u", "D:/livecat/post_live.py", path, "--num-shorts", "3", "--dry-run"],
                         creationflags=0x00000008,  # DETACHED_PROCESS
                     )
-                    print(f"  [{ts()}] Post-live pipeline launched")
+                    print(f"  [{ts()}] Post-live pipeline launched (dry-run)")
         except Exception:
             pass
         ws.disconnect()
@@ -252,12 +257,17 @@ async def http_handler(reader, writer):
 
 
 async def main():
+    mode = "DRY RUN (record only)" if DRY_RUN else "LIVE"
     print("=" * 50)
-    print("  LiveCat Auto Live")
+    print(f"  LiveCat Auto Live [{mode}]")
     print("=" * 50)
     print()
-    print("  Metadata arriving  -> OBS ON  -> YouTube Live")
-    print("  No metadata 5s     -> OBS OFF -> YouTube auto-ends")
+    if DRY_RUN:
+        print("  Metadata arriving  -> OBS RECORD (no YouTube)")
+        print("  No metadata 5s     -> OBS STOP -> post-live dry-run")
+    else:
+        print("  Metadata arriving  -> OBS ON  -> YouTube Live")
+        print("  No metadata 5s     -> OBS OFF -> YouTube auto-ends")
     print()
 
     # Verify OBS connection (retry up to 60s for OBS to start)
@@ -269,7 +279,7 @@ async def main():
             status = ws.get_stream_status()
             streaming = status.output_active
             print(f" OK (currently {'LIVE' if streaming else 'OFF'})")
-            if streaming:
+            if streaming and not DRY_RUN:
                 try:
                     ws.stop_stream()
                     print(f"  [OBS] Stopped existing stream for clean start")

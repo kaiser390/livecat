@@ -44,7 +44,7 @@ struct SettingsView: View {
                     settingsField(
                         title: NSLocalizedString("server_ip", comment: ""),
                         text: $settings.serverIP,
-                        placeholder: "192.168.123.106",
+                        placeholder: "192.168.123.xxx",
                         keyboard: .decimalPad,
                         field: .ip
                     )

@@ -45,7 +45,7 @@ struct ConfigurationView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         // Server section
                         settingsSection("SERVER") {
-                            settingsField("IP Address", text: $serverIP, placeholder: "192.168.123.106")
+                            settingsField("IP Address", text: $serverIP, placeholder: "192.168.123.xxx")
                             settingsField("SRT Port", text: $srtPort, placeholder: "9000")
                         }
 

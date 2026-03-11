@@ -1,7 +1,7 @@
 import Foundation
 
 struct CameraConfig: Codable, Sendable {
-    var serverIP: String = "192.168.123.106"
+    var serverIP: String = ""
     var camID: String = "CAM-1"
     var srtPort: Int = 9000
     var metadataPort: Int = 8081
