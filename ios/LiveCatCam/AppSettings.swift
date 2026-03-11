@@ -5,7 +5,7 @@ import AVFoundation
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
-    @AppStorage("serverIP") var serverIP: String = ""
+    @AppStorage("serverIP") var serverIP: String = "192.168.123.101"
     @AppStorage("udpPort") var udpPort: Int = 9000
     @AppStorage("wsPort") var wsPort: Int = 8081
     @AppStorage("videoQuality") var videoQuality: VideoQuality = .hd1080
