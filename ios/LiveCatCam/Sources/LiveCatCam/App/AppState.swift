@@ -128,10 +128,10 @@ final class AppState {
         #endif
         startThermalMonitoring()
 
-        // Start DockKit accessory monitoring (non-blocking)
-        if let motor = motorController {
-            Task { await motor.connect() }
-        }
+        // DockKit: disabled for production release
+        // if let motor = motorController {
+        //     Task { await motor.connect() }
+        // }
     }
 
     func stop() async {
@@ -238,12 +238,13 @@ final class AppState {
     // MARK: - Setup
 
     private func setupModules() {
-        // Use mock motor controller (switch to real MotorController when hardware is available)
-        #if targetEnvironment(simulator)
-        motorController = MotorControllerMock()
-        #else
-        motorController = MotorControllerMock()  // TODO: Switch to MotorController() with real DockKit
-        #endif
+        // DockKit: disabled for production release
+        // Uncomment when DockKit hardware is available:
+        // #if targetEnvironment(simulator)
+        // motorController = MotorControllerMock()
+        // #else
+        // motorController = MotorControllerMock()  // TODO: Switch to MotorController() with real DockKit
+        // #endif
 
         // Network
         let connection = ServerConnection(config: config)
