@@ -52,7 +52,8 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
         }
         connection?.start(queue: queue)
 
-        try muxer.start()
+        // NOTE: muxer is used only for buildTSData/buildAudioTSData — do NOT start() it
+        // muxer.start() would open a duplicate UDP connection and corrupt the stream
         isActive = true
         fecBuffer = []
         groupID = 0
@@ -73,7 +74,6 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
 
     func stop() {
         isActive = false
-        muxer.stop()
         connection?.cancel()
         connection = nil
         Log.streaming.info("[FEC] Stopped. data=\(self.chunksSent) fec=\(self.fecSent)")
