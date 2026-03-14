@@ -18,7 +18,6 @@
 		297D090645A9F31E93AC5B6C /* LiveCatCamApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDAB9332797D3AB4E942EBCE /* LiveCatCamApp.swift */; };
 		2F84747C7460F35B17D58D9E /* SRTStreamer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 816961DF1D12AD1B951F25D7 /* SRTStreamer.swift */; };
 		30C3DACE0C335E9BD133BA6D /* ConnectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B3A9E81F95EC342C14BA249 /* ConnectionMonitor.swift */; };
-		38FE972B831DD37BC491EA12 /* libsrt.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = CC7DE2796D9B3BFDB3AF9B49 /* libsrt.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4336A8E90E353CB39559C7F0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C772D858027C8EE0ACC7D7 /* AppState.swift */; };
 		48F822A82DA1C6FD7AA3A3E2 /* MotorController.swift.bak49 in Resources */ = {isa = PBXBuildFile; fileRef = E8F5FA043E4DCE313038B0AF /* MotorController.swift.bak49 */; };
 		4EDE2E7040DD014267D71532 /* CatTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 169A40AA8599E02FD8C7E714 /* CatTracker.swift */; };
@@ -28,7 +27,6 @@
 		7429435D0675D691536F4794 /* MetadataMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21AB6F823B0F2C57B1903269 /* MetadataMessage.swift */; };
 		7D51A707C2BC8B61301FBE08 /* ServiceDiscoveryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67CFE4475371BDFA76C314E6 /* ServiceDiscoveryManager.swift */; };
 		86BD7C883FDB366E2E9D0806 /* SafeVisionPerformer.m in Sources */ = {isa = PBXBuildFile; fileRef = 8E3CA0C6E582575BBFEBA734 /* SafeVisionPerformer.m */; };
-		928A74FFCF785AA21A24D17B /* libsrt.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC7DE2796D9B3BFDB3AF9B49 /* libsrt.xcframework */; };
 		9F0DDC0B20B00CC9597BECDC /* TapToTrackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CCAFA84768E78D6EDCFAED /* TapToTrackManager.swift */; };
 		AA6EB5EEBCE8ACC669F33CBC /* CameraConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0BB5CC71C42480F9826F5B /* CameraConfig.swift */; };
 		AB7A37428E46C24EB1FD6C79 /* CatPose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CB708B476FC83144FCA50C /* CatPose.swift */; };
@@ -53,20 +51,6 @@
 		FB2CEFF6CC852360BC7978BD /* ConfigurationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C709389B9886BCA57CA161A /* ConfigurationView.swift */; };
 		FB63AFED88DD875023477601 /* MotorControllerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE62B73946C092F2488A5527 /* MotorControllerMock.swift */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		83CB9F9D13BBCF4A9D592AC3 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				38FE972B831DD37BC491EA12 /* libsrt.xcframework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		01B145048F3A0F5BF1675C81 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
@@ -110,23 +94,11 @@
 		B6079A1B1139DB7C4286FFB3 /* TrackingStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingStateMachine.swift; sourceTree = "<group>"; };
 		B8F4CB7B5A2FAC546DDED625 /* ServerConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerConnection.swift; sourceTree = "<group>"; };
 		BB0306764EEBF1BEDED99146 /* CatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatDetector.swift; sourceTree = "<group>"; };
-		CC7DE2796D9B3BFDB3AF9B49 /* libsrt.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = libsrt.xcframework; path = Frameworks/libsrt.xcframework; sourceTree = "<group>"; };
 		E8C0225AA43D74BBFB15D30E /* RemoteLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteLogger.swift; sourceTree = "<group>"; };
 		E8F5FA043E4DCE313038B0AF /* MotorController.swift.bak49 */ = {isa = PBXFileReference; path = MotorController.swift.bak49; sourceTree = "<group>"; };
 		EDAB9332797D3AB4E942EBCE /* LiveCatCamApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveCatCamApp.swift; sourceTree = "<group>"; };
 		EE62B73946C092F2488A5527 /* MotorControllerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotorControllerMock.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		F6327B21332D8EAA21A3DD68 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				928A74FFCF785AA21A24D17B /* libsrt.xcframework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		182DC2B71A13E34EBBE8ED8D /* Tracking */ = {
@@ -159,7 +131,6 @@
 			children = (
 				CF81A322D222070184F5844B /* LiveCatCam */,
 				E1F849294BA97FC7F31FEE40 /* SupportFiles */,
-				AB59BBDED8C1BD676EE873C6 /* Frameworks */,
 				69FEDDE0F96E7D79C07EFC9E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -188,14 +159,6 @@
 				8E3CA0C6E582575BBFEBA734 /* SafeVisionPerformer.m */,
 			);
 			path = Utils;
-			sourceTree = "<group>";
-		};
-		AB59BBDED8C1BD676EE873C6 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				CC7DE2796D9B3BFDB3AF9B49 /* libsrt.xcframework */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		BA25D0E5E44CFE90C5AD1D6A /* UI */ = {
@@ -279,8 +242,6 @@
 			buildPhases = (
 				7523D638FD8691D6013AC725 /* Sources */,
 				D88116BDD7DBD5149F0ED574 /* Resources */,
-				F6327B21332D8EAA21A3DD68 /* Frameworks */,
-				83CB9F9D13BBCF4A9D592AC3 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -399,16 +360,12 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = SXMBC325X9;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"Frameworks\"",
-				);
 				INFOPLIST_FILE = SupportFiles/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.kaiser390.OLiveCam;
 				PRODUCT_NAME = OLiveCam;
 				SDKROOT = iphoneos;
@@ -430,16 +387,12 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = SXMBC325X9;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"Frameworks\"",
-				);
 				INFOPLIST_FILE = SupportFiles/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				OTHER_LDFLAGS = "-lc++";
+				OTHER_LDFLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.kaiser390.OLiveCam;
 				PRODUCT_NAME = OLiveCam;
 				SDKROOT = iphoneos;
@@ -487,7 +440,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 64;
+				CURRENT_PROJECT_VERSION = 77;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -554,7 +507,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 64;
+				CURRENT_PROJECT_VERSION = 77;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

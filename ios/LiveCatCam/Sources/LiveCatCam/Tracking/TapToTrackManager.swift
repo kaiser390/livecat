@@ -1,6 +1,7 @@
 import Foundation
 import Vision
 import CoreImage
+import os
 
 /// Manages tap-to-track lifecycle: tap selection → VNTrackObjectRequest → loss → search → timeout.
 ///
@@ -11,7 +12,8 @@ import CoreImage
 ///   └──────stop────────┘                     │
 ///   └──────────timeout───────────────────────┘
 /// ```
-actor TapToTrackManager {
+@MainActor
+final class TapToTrackManager {
 
     // MARK: - Types
 
@@ -105,7 +107,7 @@ actor TapToTrackManager {
         targetID = UUID()
         speedHistory.removeAll()
 
-        Log.tracking.info("Tap-to-Track: started on bbox \(bbox)")
+        Log.tracking.info("Tap-to-Track: started on bbox \(String(describing: bbox))")
     }
 
     /// Stop all tracking and return to idle.
@@ -201,7 +203,7 @@ actor TapToTrackManager {
     private func enterSearchMode() {
         state = .searching
         searchStartTime = Date().timeIntervalSince1970
-        Log.tracking.info("Tap-to-Track: search mode (dir: vx=\(lastVelocityX), vy=\(lastVelocityY))")
+        Log.tracking.info("Tap-to-Track: search mode (dir: vx=\(self.lastVelocityX), vy=\(self.lastVelocityY))")
     }
 
     private func performSearch(_ pixelBuffer: CVPixelBuffer) -> TrackResult {
@@ -216,7 +218,7 @@ actor TapToTrackManager {
 
         // Try to re-detect the object using the last known observation
         if let lastObs = lastObservation {
-            let request = VNTrackObjectRequest(detectedObject: lastObs)
+            let request = VNTrackObjectRequest(detectedObjectObservation: lastObs)
             request.trackingLevel = .accurate
             let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up)
             do {
@@ -261,7 +263,7 @@ actor TapToTrackManager {
 
     private func setupTrackingRequest(with observation: VNDetectedObjectObservation) {
         lastObservation = observation
-        let request = VNTrackObjectRequest(detectedObject: observation)
+        let request = VNTrackObjectRequest(detectedObjectObservation: observation)
         request.trackingLevel = .accurate
         trackingRequest = request
     }
