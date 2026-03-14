@@ -460,19 +460,21 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
         }
     }
 
-    // MARK: - CRC32 for MPEG-TS
+    // MARK: - CRC32 for MPEG-TS (lookup table — 8× faster than bit-by-bit)
+
+    private static let crc32Table: [UInt32] = (0..<256).map { i -> UInt32 in
+        var crc = UInt32(i) << 24
+        for _ in 0..<8 {
+            crc = (crc & 0x80000000) != 0 ? (crc << 1) ^ 0x04C11DB7 : crc << 1
+        }
+        return crc
+    }
 
     private func crc32mpeg(data: Data, from start: Int, length: Int) -> UInt32 {
         var crc: UInt32 = 0xFFFFFFFF
         for i in start..<(start + length) {
-            let byte = data[i]
-            for bit in 0..<8 {
-                let msb = (crc >> 31) & 1
-                crc <<= 1
-                if ((UInt32(byte) >> (7 - bit)) & 1) ^ msb == 1 {
-                    crc ^= 0x04C11DB7
-                }
-            }
+            let idx = Int((crc >> 24) ^ UInt32(data[i])) & 0xFF
+            crc = (crc << 8) ^ UDPStreamer.crc32Table[idx]
         }
         return crc
     }

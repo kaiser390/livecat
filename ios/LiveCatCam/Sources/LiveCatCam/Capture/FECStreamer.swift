@@ -15,7 +15,7 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
     private var isActive = false
     private let queue = DispatchQueue(label: "com.livecat.fec", qos: .userInteractive)
 
-    // FEC state
+    // FEC state — all accessed exclusively on `queue`
     private let fecGroupSize = 2
     private var fecBuffer: [[UInt8]] = []
     private var groupID: UInt8 = 0
@@ -35,6 +35,8 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
     // MARK: - VideoStreaming
 
     func start() throws {
+        // Guard + setup must be atomic — but NWConnection init is safe here
+        // (start() is called from AppState on MainActor, not re-entrantly)
         guard !isActive else { return }
 
         let host = NWEndpoint.Host(config.serverIP)
@@ -53,7 +55,6 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
         connection?.start(queue: queue)
 
         // NOTE: muxer is used only for buildTSData/buildAudioTSData — do NOT start() it
-        // muxer.start() would open a duplicate UDP connection and corrupt the stream
         isActive = true
         fecBuffer = []
         groupID = 0
@@ -61,51 +62,56 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
     }
 
     func write(encodedData: Data, isKeyframe: Bool = false) {
-        guard isActive, let connection else { return }
-        let tsData = muxer.buildTSData(encodedData: encodedData, isKeyframe: isKeyframe)
-        sendWithFEC(tsData, over: connection)
+        queue.async { [self] in
+            guard isActive, let connection else { return }
+            let tsData = muxer.buildTSData(encodedData: encodedData, isKeyframe: isKeyframe)
+            sendWithFEC(tsData, over: connection)
+        }
     }
 
     func writeAudio(aacData: Data) {
-        guard isActive, let connection else { return }
-        let tsData = muxer.buildAudioTSData(aacData: aacData)
-        sendWithFEC(tsData, over: connection)
+        queue.async { [self] in
+            guard isActive, let connection else { return }
+            let tsData = muxer.buildAudioTSData(aacData: aacData)
+            sendWithFEC(tsData, over: connection)
+        }
     }
 
     func stop() {
-        isActive = false
-        connection?.cancel()
-        connection = nil
+        queue.sync {
+            isActive = false
+            connection?.cancel()
+            connection = nil
+        }
         Log.streaming.info("[FEC] Stopped. data=\(self.chunksSent) fec=\(self.fecSent)")
     }
 
-    // MARK: - FEC
+    // MARK: - FEC (called on queue)
 
     private func sendWithFEC(_ tsData: Data, over connection: NWConnection) {
-        queue.async { [weak self] in
-            guard let self, self.isActive else { return }
-            let maxChunk = 1316
-            var offset = 0
-            while offset < tsData.count {
-                let end = min(offset + maxChunk, tsData.count)
-                let aligned = offset + ((end - offset) / 188) * 188
-                let chunkEnd = aligned > offset ? aligned : end
-                let chunk = Array(tsData[offset..<chunkEnd])
+        // Precondition: running on `queue`
+        let maxChunk = 1316
+        var offset = 0
+        while offset < tsData.count {
+            let end = min(offset + maxChunk, tsData.count)
+            let aligned = offset + ((end - offset) / 188) * 188
+            let chunkEnd = aligned > offset ? aligned : end
+            let chunk = Array(tsData[offset..<chunkEnd])
 
-                connection.send(content: Data(chunk), completion: .contentProcessed { [weak self] _ in
-                    self?.chunksSent += 1
-                })
+            connection.send(content: Data(chunk), completion: .contentProcessed { [weak self] _ in
+                self?.chunksSent += 1
+            })
 
-                self.fecBuffer.append(chunk)
-                if self.fecBuffer.count >= self.fecGroupSize {
-                    self.sendFECPacket(over: connection)
-                }
-                offset = chunkEnd
+            fecBuffer.append(chunk)
+            if fecBuffer.count >= fecGroupSize {
+                sendFECPacket(over: connection)
             }
+            offset = chunkEnd
         }
     }
 
     private func sendFECPacket(over connection: NWConnection) {
+        // Precondition: running on `queue`
         guard !fecBuffer.isEmpty else { return }
         let maxLen = fecBuffer.map(\.count).max() ?? 0
         var parity = [UInt8](repeating: 0, count: maxLen)
@@ -124,9 +130,11 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
     }
 
     private func reconnect() {
+        // Called from connection stateUpdateHandler (runs on queue)
         guard isActive else { return }
         connection?.cancel()
         connection = nil
+        isActive = false  // reset so start() guard passes
         queue.asyncAfter(deadline: .now() + 2) { [weak self] in
             try? self?.start()
         }

@@ -19,7 +19,33 @@ final class AudioEncoder: @unchecked Sendable {
     var onEncodedAudio: ((Data) -> Void)?
     private var frameCount: UInt64 = 0
 
+    // Serial queue — serializes encode() and stop() so AudioConverterDispose
+    // never races with AudioConverterFillComplexBuffer
+    private let queue = DispatchQueue(label: "com.livecat.audioenc", qos: .userInteractive)
+
     func encode(sampleBuffer: CMSampleBuffer) {
+        queue.async { [self] in
+            _encode(sampleBuffer: sampleBuffer)
+        }
+    }
+
+    func stop() {
+        var count: UInt64 = 0
+        queue.sync {
+            count = frameCount
+            if let conv = converter {
+                AudioConverterDispose(conv)
+            }
+            converter = nil
+            pcmBuffer.removeAll()
+            frameCount = 0
+        }
+        Log.streaming.info("[AUDIO] Encoder stopped after \(count) frames")
+    }
+
+    // MARK: - Private encode (runs on queue)
+
+    private func _encode(sampleBuffer: CMSampleBuffer) {
         guard let formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer) else { return }
 
         // Lazy init converter from first buffer's audio format
@@ -58,17 +84,6 @@ final class AudioEncoder: @unchecked Sendable {
                 onEncodedAudio?(output)
             }
         }
-    }
-
-    func stop() {
-        let count = frameCount
-        if let converter {
-            AudioConverterDispose(converter)
-        }
-        converter = nil
-        pcmBuffer.removeAll()
-        frameCount = 0
-        Log.streaming.info("[AUDIO] Encoder stopped after \(count) frames")
     }
 
     // MARK: - Setup
@@ -112,7 +127,7 @@ final class AudioEncoder: @unchecked Sendable {
         Log.streaming.info("[AUDIO] Encoder ready: → AAC-LC \(bitrate/1000)kbps maxOut=\(self.aacMaxOutputSize)B")
     }
 
-    // MARK: - Encode one AAC frame
+    // MARK: - Encode one AAC frame (runs on queue)
 
     private func encodeOneFrame(_ pcmData: Data) -> Data? {
         guard let converter else { return nil }
@@ -190,13 +205,13 @@ final class AudioEncoder: @unchecked Sendable {
         let chanCfg = UInt8(min(channels, 7))
 
         var h = Data(count: 7)
-        h[0] = 0xFF                                                           // syncword high
-        h[1] = 0xF1                                                           // syncword low + MPEG-4 + no CRC
-        h[2] = (profile << 6) | (freqIdx << 2) | ((chanCfg >> 2) & 0x01)     // profile + freq + chan high bit
-        h[3] = ((chanCfg & 0x03) << 6) | UInt8((fullLength >> 11) & 0x03)    // chan low + frame len high
-        h[4] = UInt8((fullLength >> 3) & 0xFF)                                // frame len mid
-        h[5] = UInt8((fullLength & 0x07) << 5) | 0x1F                         // frame len low + buffer fullness high (VBR=0x7FF)
-        h[6] = 0xFC                                                            // buffer fullness low + 0 raw blocks
+        h[0] = 0xFF
+        h[1] = 0xF1                                                           // MPEG-4, no CRC
+        h[2] = (profile << 6) | (freqIdx << 2) | ((chanCfg >> 2) & 0x01)
+        h[3] = ((chanCfg & 0x03) << 6) | UInt8((fullLength >> 11) & 0x03)
+        h[4] = UInt8((fullLength >> 3) & 0xFF)
+        h[5] = UInt8((fullLength & 0x07) << 5) | 0x1F                        // buffer fullness = 0x7FF (VBR)
+        h[6] = 0xFC                                                            // fullness low + 0 raw blocks
         return h
     }
 
