@@ -4,6 +4,8 @@ import Network
 struct StatusOverlayView: View {
     @Environment(AppState.self) private var appState
     @State private var showNoOBSAlert = false
+    @State private var isOBSReachable = false
+    @State private var obsMonitorTask: Task<Void, Never>?
 
     var body: some View {
         VStack {
@@ -19,6 +21,9 @@ struct StatusOverlayView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
         }
+        .onAppear { startOBSMonitor() }
+        .onDisappear { obsMonitorTask?.cancel() }
+        .onChange(of: appState.config.serverIP) { _, _ in startOBSMonitor() }
         .alert("No OBS Detected", isPresented: $showNoOBSAlert) {
             Button("Stream Anyway") {
                 Task {
@@ -31,6 +36,19 @@ struct StatusOverlayView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("OBS not found at \(appState.config.serverIP). Make sure OBS is running with WebSocket Server enabled (port 4455). Stream anyway?")
+        }
+    }
+
+    // MARK: - OBS Monitor (1s interval)
+
+    private func startOBSMonitor() {
+        obsMonitorTask?.cancel()
+        obsMonitorTask = Task {
+            while !Task.isCancelled {
+                let reachable = await probeOBS(ip: appState.config.serverIP)
+                await MainActor.run { isOBSReachable = reachable }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
         }
     }
 
@@ -147,9 +165,9 @@ struct StatusOverlayView: View {
 
             // Connection status + protocol + server (always visible)
             HStack(spacing: 4) {
-                Image(systemName: appState.isConnected ? "wifi" : "wifi.slash")
+                Image(systemName: isOBSReachable ? "wifi" : "wifi.slash")
                     .font(.system(size: 13))
-                    .foregroundStyle(appState.isConnected ? .green : .white.opacity(0.35))
+                    .foregroundStyle(isOBSReachable ? .green : .white.opacity(0.35))
                 Text(appState.config.streamProtocol.rawValue)
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(.black)
@@ -208,17 +226,13 @@ struct StatusOverlayView: View {
                     gen.impactOccurred()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { gen.impactOccurred() }
                     #endif
+                } else if isOBSReachable {
+                    await appState.startStreaming()
+                    #if os(iOS)
+                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                    #endif
                 } else {
-                    // Quick probe: is OBS running at target IP?
-                    let obsReachable = await probeOBS(ip: appState.config.serverIP)
-                    if obsReachable {
-                        await appState.startStreaming()
-                        #if os(iOS)
-                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-                        #endif
-                    } else {
-                        showNoOBSAlert = true
-                    }
+                    showNoOBSAlert = true
                 }
             }
         } label: {
