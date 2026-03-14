@@ -173,7 +173,7 @@ final class AppState {
         if srtStreamer == nil {
             switch config.streamProtocol {
             case .udp: srtStreamer = UDPStreamer(config: config)
-            case .fec: srtStreamer = FECStreamer(config: config)
+            // case .fec: srtStreamer = FECStreamer(config: config)  // Reserved
             case .srt: srtStreamer = SRTStreamer(config: config)
             }
             addDebug("Streamer created: \(config.streamProtocol.rawValue)")
@@ -271,7 +271,7 @@ final class AppState {
         srtStreamer?.stop()
         switch config.streamProtocol {
         case .udp: srtStreamer = UDPStreamer(config: config)
-        case .fec: srtStreamer = FECStreamer(config: config)
+        // case .fec: srtStreamer = FECStreamer(config: config)  // Reserved
         case .srt: srtStreamer = SRTStreamer(config: config)
         }
         let connection = ServerConnection(config: config)
@@ -316,7 +316,7 @@ final class AppState {
         )
         switch config.streamProtocol {
         case .udp: srtStreamer = UDPStreamer(config: config)
-        case .fec: srtStreamer = FECStreamer(config: config)
+        // case .fec: srtStreamer = FECStreamer(config: config)  // Reserved
         case .srt: srtStreamer = SRTStreamer(config: config)
         }
 

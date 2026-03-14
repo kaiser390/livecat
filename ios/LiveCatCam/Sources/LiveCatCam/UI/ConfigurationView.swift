@@ -11,6 +11,7 @@ struct ConfigurationView: View {
     @State private var showUnsavedAlert = false
     @State private var showHelpSheet = false
     @State private var showObsHint = false
+    @State private var selectedServerHost: String? = nil
 
     var body: some View {
         HStack(spacing: 0) {
@@ -88,13 +89,22 @@ struct ConfigurationView: View {
                                             .font(.system(size: 12, weight: .semibold))
                                             .foregroundStyle(.orange)
                                     }
-                                    Text("OBS setup (for direct connection):")
+                                    Text("OBS setup — UDP mode:")
                                         .font(.system(size: 11))
                                         .foregroundStyle(.white.opacity(0.5))
                                     obsStep("1", "Sources → + → Media Source")
                                     obsStep("2", "Input: udp://@0.0.0.0:9000")
                                     obsStep("3", "Format: mpegts → OK")
-                                    obsStep("4", "Enter Mac IP above & tap Start")
+
+                                    Text("OBS setup — SRT mode (recommended):")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white.opacity(0.5))
+                                        .padding(.top, 6)
+                                    obsStep("1", "Sources → + → Media Source")
+                                    obsStep("2", "Input: srt://0.0.0.0:9000?mode=listener")
+                                    obsStep("3", "Format: mpegts → OK")
+
+                                    obsStep("→", "Enter OBS PC/Mac IP above & tap Start")
                                 }
                                 .padding(10)
                                 .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
@@ -106,15 +116,17 @@ struct ConfigurationView: View {
 
                             // Found servers
                             ForEach(discovery.servers) { server in
+                                let isSelected = selectedServerHost == server.host
                                 Button {
                                     serverIP = server.host
+                                    selectedServerHost = server.host
                                     #if os(iOS)
                                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                                     #endif
                                 } label: {
                                     HStack(spacing: 8) {
-                                        Image(systemName: server.type == .obs ? "tv.fill" : "checkmark.circle.fill")
-                                            .foregroundStyle(server.type == .obs ? .purple : .green)
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : (server.type == .obs ? "tv.fill" : "antenna.radiowaves.left.and.right"))
+                                            .foregroundStyle(isSelected ? .green : (server.type == .obs ? .purple : .cyan))
                                             .font(.system(size: 14))
                                         VStack(alignment: .leading, spacing: 2) {
                                             HStack(spacing: 4) {
@@ -136,15 +148,25 @@ struct ConfigurationView: View {
                                                 .foregroundStyle(.white.opacity(0.6))
                                         }
                                         Spacer()
-                                        Text("Use")
+                                        Text(isSelected ? "Selected ✓" : "Use")
                                             .font(.system(size: 11, weight: .medium))
-                                            .foregroundStyle(.white.opacity(0.8))
+                                            .foregroundStyle(isSelected ? .green : .white.opacity(0.8))
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 4)
-                                            .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                                            .background(
+                                                isSelected ? Color.green.opacity(0.2) : .white.opacity(0.15),
+                                                in: RoundedRectangle(cornerRadius: 4)
+                                            )
                                     }
                                     .padding(8)
-                                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                                    .background(
+                                        isSelected ? Color.green.opacity(0.1) : .white.opacity(0.08),
+                                        in: RoundedRectangle(cornerRadius: 8)
+                                    )
+                                    .overlay(
+                                        isSelected ? RoundedRectangle(cornerRadius: 8).stroke(.green.opacity(0.4), lineWidth: 1) : nil
+                                    )
+                                    .animation(.easeInOut(duration: 0.2), value: isSelected)
                                 }
                             }
 
@@ -184,9 +206,8 @@ struct ConfigurationView: View {
                                                 Text(proto.rawValue)
                                                     .font(.system(size: 12, weight: .semibold))
                                                     .foregroundStyle(.white)
-                                                Text(proto == .udp ? "OBS direct — lowest latency"
-                                     : proto == .fec ? "FEC parity — block-loss recovery"
-                                     : "SRT — reliable, ARQ retransmit")
+                                                Text(proto == .udp ? "Fastest — may have rare glitches"
+                                     : "Best quality — reliable, ~200ms delay")
                                                     .font(.system(size: 10))
                                                     .foregroundStyle(.white.opacity(0.45))
                                             }
