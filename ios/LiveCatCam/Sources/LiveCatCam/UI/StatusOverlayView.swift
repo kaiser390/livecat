@@ -100,10 +100,26 @@ struct StatusOverlayView: View {
 
             Spacer()
 
-            // Connection status
-            Image(systemName: appState.isConnected ? "wifi" : "wifi.slash")
-                .font(.system(size: 13))
-                .foregroundStyle(appState.isConnected ? .green : .white.opacity(0.35))
+            // Connection status + protocol + server
+            HStack(spacing: 4) {
+                Image(systemName: appState.isConnected ? "wifi" : "wifi.slash")
+                    .font(.system(size: 13))
+                    .foregroundStyle(appState.isConnected ? .green : .white.opacity(0.35))
+                if appState.isLive {
+                    Text(appState.config.streamProtocol.rawValue)
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(
+                            appState.config.streamProtocol == .srt ? Color.cyan : Color.orange,
+                            in: RoundedRectangle(cornerRadius: 3)
+                        )
+                    Text(appState.config.serverIP.split(separator: ".").suffix(1).joined())
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+            }
 
             Spacer()
 
