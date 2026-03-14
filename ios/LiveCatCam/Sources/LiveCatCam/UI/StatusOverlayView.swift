@@ -1,7 +1,10 @@
 import SwiftUI
+import Network
 
 struct StatusOverlayView: View {
     @Environment(AppState.self) private var appState
+    @State private var showNoOBSAlert = false
+
     var body: some View {
         VStack {
             // MARK: - Top bar
@@ -15,6 +18,49 @@ struct StatusOverlayView: View {
             bottomBar
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
+        }
+        .alert("No OBS Detected", isPresented: $showNoOBSAlert) {
+            Button("Stream Anyway") {
+                Task {
+                    await appState.startStreaming()
+                    #if os(iOS)
+                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                    #endif
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("OBS not found at \(appState.config.serverIP). Make sure OBS is running with WebSocket Server enabled (port 4455). Stream anyway?")
+        }
+    }
+
+    // MARK: - OBS Probe
+
+    private func probeOBS(ip: String) async -> Bool {
+        await withCheckedContinuation { continuation in
+            let conn = NWConnection(
+                host: NWEndpoint.Host(ip),
+                port: NWEndpoint.Port(integerLiteral: 4455),
+                using: .tcp
+            )
+            var resolved = false
+            let timer = DispatchWorkItem {
+                if !resolved { resolved = true; conn.cancel(); continuation.resume(returning: false) }
+            }
+            conn.stateUpdateHandler = { state in
+                guard !resolved else { return }
+                switch state {
+                case .ready:
+                    resolved = true; timer.cancel(); conn.cancel()
+                    continuation.resume(returning: true)
+                case .failed, .cancelled:
+                    resolved = true; timer.cancel()
+                    continuation.resume(returning: false)
+                default: break
+                }
+            }
+            conn.start(queue: .global(qos: .userInteractive))
+            DispatchQueue.global().asyncAfter(deadline: .now() + 1.0, execute: timer)
         }
     }
 
@@ -163,10 +209,16 @@ struct StatusOverlayView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { gen.impactOccurred() }
                     #endif
                 } else {
-                    await appState.startStreaming()
-                    #if os(iOS)
-                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-                    #endif
+                    // Quick probe: is OBS running at target IP?
+                    let obsReachable = await probeOBS(ip: appState.config.serverIP)
+                    if obsReachable {
+                        await appState.startStreaming()
+                        #if os(iOS)
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                        #endif
+                    } else {
+                        showNoOBSAlert = true
+                    }
                 }
             }
         } label: {
