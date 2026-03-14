@@ -173,4 +173,8 @@ actor ServerConnection {
     func setCommandHandler(_ handler: @escaping (ServerCommand) -> Void) {
         self.onCommand = handler
     }
+
+    func setStateHandler(_ handler: @escaping (ConnectionState) -> Void) {
+        self.onStateChange = handler
+    }
 }

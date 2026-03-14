@@ -278,7 +278,14 @@ final class AppState {
         serverConnection = connection
         metadataReporter = MetadataReporter(connection: connection, config: config)
         let receiver = commandReceiver
-        Task { await connection.setCommandHandler { command in receiver.dispatch(command) } }
+        Task {
+            await connection.setStateHandler { [weak self] state in
+                Task { @MainActor in
+                    self?.isConnected = (state == .connected || state == .registered)
+                }
+            }
+            await connection.setCommandHandler { command in receiver.dispatch(command) }
+        }
         if wasLive { await startStreaming() }
         addDebug("→ \(config.streamProtocol.rawValue) \(config.serverIP):\(config.srtPort)")
     }
@@ -298,6 +305,15 @@ final class AppState {
         let connection = ServerConnection(config: config)
         serverConnection = connection
         metadataReporter = MetadataReporter(connection: connection, config: config)
+
+        // Wire server connection state → isConnected (wifi icon)
+        Task {
+            await connection.setStateHandler { [weak self] state in
+                Task { @MainActor in
+                    self?.isConnected = (state == .connected || state == .registered)
+                }
+            }
+        }
 
         // Wire server commands → command receiver
         let receiver = commandReceiver
