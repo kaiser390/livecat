@@ -337,11 +337,14 @@ final class AppState {
         }
 
         // Connection state handling
+        // NOTE: isConnected is set by ServerConnection.onStateChange, NOT by WiFi monitor
+        // WiFi monitor only triggers reconnection attempt
         connectionMonitor.onConnectionChanged = { [weak self] connected in
             Task { @MainActor in
-                self?.isConnected = connected
                 if connected {
                     await self?.serverConnection?.connect()
+                } else {
+                    self?.isConnected = false
                 }
             }
         }

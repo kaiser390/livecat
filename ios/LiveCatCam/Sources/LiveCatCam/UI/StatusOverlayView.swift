@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StatusOverlayView: View {
     @Environment(AppState.self) private var appState
+    @State private var showNoServerAlert = false
 
     var body: some View {
         VStack {
@@ -16,6 +17,19 @@ struct StatusOverlayView: View {
             bottomBar
                 .padding(.horizontal, 20)
                 .padding(.bottom, 12)
+        }
+        .alert("No Server Connected", isPresented: $showNoServerAlert) {
+            Button("Stream Anyway") {
+                Task {
+                    await appState.startStreaming()
+                    #if os(iOS)
+                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                    #endif
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("No OBS or server found at \(appState.config.serverIP). Video may not be received. Start streaming anyway?")
         }
     }
 
@@ -163,6 +177,9 @@ struct StatusOverlayView: View {
                     gen.impactOccurred()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { gen.impactOccurred() }
                     #endif
+                } else if !appState.isConnected {
+                    // No server connected — ask user to confirm
+                    showNoServerAlert = true
                 } else {
                     await appState.startStreaming()
                     #if os(iOS)

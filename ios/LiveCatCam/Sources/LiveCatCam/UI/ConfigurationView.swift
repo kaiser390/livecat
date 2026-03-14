@@ -466,18 +466,28 @@ struct HelpGuideView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
 
-                    helpSection(icon: "server.rack", title: "Server Setup (PC)") {
-                        helpStep("1", "Install Python 3 on your PC")
-                        helpStep("2", "Run: python live_auto.py")
-                        helpStep("3", "Server registers on local network automatically")
-                        helpStep("4", "Note your PC's IP address (e.g. 192.168.1.x)")
+                    helpSection(icon: "tv.fill", title: "Quick Start — OBS Direct (No Server Needed)") {
+                        helpStep("1", "Install OBS Studio on your PC/Mac")
+                        helpStep("2", "Add Media Source in OBS (see SRT or UDP setup below)")
+                        helpStep("3", "Find your PC/Mac IP address (Settings → WiFi → IP)")
+                        helpStep("4", "Open OLiveCam → Settings → enter PC/Mac IP")
+                        helpStep("5", "Choose protocol: SRT (recommended) or UDP")
+                        helpStep("6", "Tap Save → Tap Start")
+                        Text("That's it! No server software needed. OBS receives video directly from your iPhone.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
                     }
 
-                    helpSection(icon: "iphone", title: "App Setup") {
-                        helpStep("1", "Tap ⚙ to open Settings")
-                        helpStep("2", "Tap Auto Discover — app finds the server")
-                        helpStep("3", "Or enter PC's IP address manually")
-                        helpStep("4", "Tap Start on main screen to begin streaming")
+                    helpSection(icon: "server.rack", title: "Advanced — Server Mode (Optional)") {
+                        helpStep("1", "Install Python 3 on your PC")
+                        helpStep("2", "Run: python live_auto.py")
+                        helpStep("3", "App auto-discovers the server via Bonjour")
+                        helpStep("4", "Enables: auto YouTube upload, multi-cam, AI features")
+                        Text("Server mode is optional. Most users only need OBS Direct mode above.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
                     }
 
                     helpSection(icon: "shield.checkered", title: "OBS Setup — SRT (Recommended)") {
