@@ -522,10 +522,10 @@ struct HelpGuideView: View {
                     }
 
                     helpSection(icon: "wifi", title: "Troubleshooting") {
-                        helpStep("•", "No video in OBS? Check IP address matches your PC")
-                        helpStep("•", "Auto Discover fails? Run live_auto.py on PC first")
-                        helpStep("•", "Choppy video? Move closer to Wi-Fi router")
-                        helpStep("•", "App disconnects? Check PC firewall (allow UDP 9000)")
+                        helpStep("•", "No video in OBS? Check OBS Media Source settings (protocol, port, format)")
+                        helpStep("•", "Still no video? Verify IP address matches your PC/Mac")
+                        helpStep("•", "Choppy video? Try SRT mode or move closer to Wi-Fi router")
+                        helpStep("•", "App disconnects? Check PC firewall (allow port 9000)")
                     }
                 }
                 .padding(20)
