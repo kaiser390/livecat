@@ -170,13 +170,13 @@ struct ConfigurationView: View {
                                 }
                             }
 
-                            settingsField("IP Address", text: $serverIP, placeholder: "192.168.123.xxx")
-                            settingsField("SRT Port", text: $srtPort, placeholder: "9000")
+                            settingsField("IP Address", text: $serverIP, placeholder: "192.168.123.xxx", keyboardType: .asciiCapable)
+                            settingsField("SRT Port", text: $srtPort, placeholder: "9000", keyboardType: .numberPad)
                         }
 
                         // Camera section
                         settingsSection("CAMERA") {
-                            settingsField("Camera ID", text: $camID, placeholder: "CAM-1")
+                            settingsField("Camera ID", text: $camID, placeholder: "CAM-1", keyboardType: .asciiCapable)
                             HStack {
                                 Text("Resolution")
                                     .font(.system(size: 13))
@@ -325,7 +325,8 @@ struct ConfigurationView: View {
         }
     }
 
-    private func settingsField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
+    private func settingsField(_ label: String, text: Binding<String>, placeholder: String,
+                               keyboardType: UIKeyboardType = .default) -> some View {
         HStack {
             Text(label)
                 .font(.system(size: 13))
@@ -337,7 +338,7 @@ struct ConfigurationView: View {
                 .multilineTextAlignment(.trailing)
                 .frame(width: 130)
                 #if os(iOS)
-                .keyboardType(.decimalPad)
+                .keyboardType(keyboardType)
                 .toolbar {
                     ToolbarItemGroup(placement: .keyboard) {
                         Spacer()
@@ -414,6 +415,7 @@ struct ConfigurationView: View {
         srtPort = "\(appState.config.srtPort)"
         selectedResolution = appState.config.resolution
         selectedProtocol = appState.config.streamProtocol
+        selectedServerHost = appState.config.serverIP
     }
 
     private func saveConfig() {
@@ -478,7 +480,23 @@ struct HelpGuideView: View {
                         helpStep("4", "Tap Start on main screen to begin streaming")
                     }
 
-                    helpSection(icon: "video.fill", title: "OBS Setup (Without Server)") {
+                    helpSection(icon: "shield.checkered", title: "OBS Setup — SRT (Recommended)") {
+                        helpStep("1", "Open OBS Studio on your PC/Mac")
+                        helpStep("2", "Sources panel → tap +")
+                        helpStep("3", "Select Media Source → OK")
+                        helpStep("4", "Uncheck Local File")
+                        helpStep("5", "Input:  srt://0.0.0.0:9000?mode=listener")
+                        helpStep("6", "Input Format:  mpegts")
+                        helpStep("7", "Click OK")
+                        helpStep("8", "Select SRT protocol in app Settings")
+                        helpStep("9", "Enter OBS PC/Mac IP → tap Start")
+                        Text("SRT provides reliable delivery with ~200ms latency. Best for stable streams.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+
+                    helpSection(icon: "video.fill", title: "OBS Setup — UDP (Low Latency)") {
                         helpStep("1", "Open OBS Studio on your PC/Mac")
                         helpStep("2", "Sources panel → tap +")
                         helpStep("3", "Select Media Source → OK")
@@ -487,7 +505,7 @@ struct HelpGuideView: View {
                         helpStep("6", "Input Format:  mpegts")
                         helpStep("7", "Click OK")
                         helpStep("8", "Enter Mac/PC IP in app → tap Start")
-                        Text("💡 Make sure your iPhone and PC are on the same Wi-Fi network.")
+                        Text("UDP has lowest latency but may occasionally glitch on packet loss.")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                             .padding(.top, 4)
