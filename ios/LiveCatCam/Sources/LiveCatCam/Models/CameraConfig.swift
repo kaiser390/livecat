@@ -13,11 +13,13 @@ struct CameraConfig: Codable, Sendable {
     enum StreamProtocol: String, Codable, Sendable, CaseIterable {
         case udp = "UDP"
         case fec = "UDP+FEC"
+        case srt = "SRT"
 
         var description: String {
             switch self {
-            case .udp: return "UDP — 낮은 지연 (OBS 직접 연결)"
-            case .fec: return "UDP+FEC — 안정적 (live_auto.py 경유)"
+            case .udp: return "UDP — 낮은 지연, OBS 직접"
+            case .fec: return "UDP+FEC — 손실 복구, live_auto.py"
+            case .srt: return "SRT — ARQ 재전송, OBS 직접"
             }
         }
     }

@@ -243,7 +243,11 @@ final class AppState {
     func applyNetworkConfig() async {
         let wasLive = isLive
         if wasLive { await stopStreaming() }
-        srtStreamer = config.streamProtocol == .fec ? SRTStreamer(config: config) : UDPStreamer(config: config)
+        switch config.streamProtocol {
+        case .udp: srtStreamer = UDPStreamer(config: config)
+        case .fec: srtStreamer = FECStreamer(config: config)
+        case .srt: srtStreamer = SRTStreamer(config: config)
+        }
         let connection = ServerConnection(config: config)
         serverConnection = connection
         metadataReporter = MetadataReporter(connection: connection, config: config)
@@ -284,7 +288,11 @@ final class AppState {
             fps: config.fps,
             bitrate: config.bitrate
         )
-        srtStreamer = config.streamProtocol == .fec ? SRTStreamer(config: config) : UDPStreamer(config: config)
+        switch config.streamProtocol {
+        case .udp: srtStreamer = UDPStreamer(config: config)
+        case .fec: srtStreamer = FECStreamer(config: config)
+        case .srt: srtStreamer = SRTStreamer(config: config)
+        }
 
         // Connection state handling
         connectionMonitor.onConnectionChanged = { [weak self] connected in

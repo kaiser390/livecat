@@ -8,8 +8,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: 3
+    MARKETING_VERSION: "1.0.1"
+    CURRENT_PROJECT_VERSION: 64
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     SUPPORTS_MACCATALYST: false
 
@@ -22,6 +22,9 @@ targets:
       - path: Sources/LiveCatCam
         type: group
       - path: SupportFiles/Assets.xcassets
+    dependencies:
+      - framework: Frameworks/libsrt.xcframework
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kaiser390.OLiveCam
@@ -35,6 +38,8 @@ targets:
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: 1
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
+        SWIFT_OBJC_BRIDGING_HEADER: SupportFiles/LiveCatCam-Bridging-Header.h
+        OTHER_LDFLAGS: "-lc++"
     entitlements:
       path: SupportFiles/LiveCatCam.entitlements
 
