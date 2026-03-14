@@ -115,7 +115,7 @@ struct StatusOverlayView: View {
                             appState.config.streamProtocol == .srt ? Color.cyan : Color.orange,
                             in: RoundedRectangle(cornerRadius: 3)
                         )
-                    Text(appState.config.serverIP.split(separator: ".").suffix(1).joined())
+                    Text(appState.config.serverIP)
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.5))
                 }
