@@ -16,7 +16,7 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
     private let queue = DispatchQueue(label: "com.livecat.fec", qos: .userInteractive)
 
     // FEC state
-    private let fecGroupSize = 4
+    private let fecGroupSize = 2
     private var fecBuffer: [[UInt8]] = []
     private var groupID: UInt8 = 0
 
@@ -82,23 +82,26 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
     // MARK: - FEC
 
     private func sendWithFEC(_ tsData: Data, over connection: NWConnection) {
-        let maxChunk = 1316
-        var offset = 0
-        while offset < tsData.count {
-            let end = min(offset + maxChunk, tsData.count)
-            let aligned = offset + ((end - offset) / 188) * 188
-            let chunkEnd = aligned > offset ? aligned : end
-            let chunk = Array(tsData[offset..<chunkEnd])
+        queue.async { [weak self] in
+            guard let self, self.isActive else { return }
+            let maxChunk = 1316
+            var offset = 0
+            while offset < tsData.count {
+                let end = min(offset + maxChunk, tsData.count)
+                let aligned = offset + ((end - offset) / 188) * 188
+                let chunkEnd = aligned > offset ? aligned : end
+                let chunk = Array(tsData[offset..<chunkEnd])
 
-            connection.send(content: Data(chunk), completion: .contentProcessed { [weak self] _ in
-                self?.chunksSent += 1
-            })
+                connection.send(content: Data(chunk), completion: .contentProcessed { [weak self] _ in
+                    self?.chunksSent += 1
+                })
 
-            fecBuffer.append(chunk)
-            if fecBuffer.count >= fecGroupSize {
-                sendFECPacket(over: connection)
+                self.fecBuffer.append(chunk)
+                if self.fecBuffer.count >= self.fecGroupSize {
+                    self.sendFECPacket(over: connection)
+                }
+                offset = chunkEnd
             }
-            offset = chunkEnd
         }
     }
 
