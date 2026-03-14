@@ -155,6 +155,16 @@ final class AppState {
         guard !isLive else { return }
         addDebug("START tapped")
 
+        // Ensure streamer exists (fixes cold-start nil issue)
+        if srtStreamer == nil {
+            switch config.streamProtocol {
+            case .udp: srtStreamer = UDPStreamer(config: config)
+            case .fec: srtStreamer = FECStreamer(config: config)
+            case .srt: srtStreamer = SRTStreamer(config: config)
+            }
+            addDebug("Streamer created: \(config.streamProtocol.rawValue)")
+        }
+
         // Wire up video encoding → UDP (thread-safe: capture local ref)
         addDebug("Wiring encoder → UDP...")
         let streamer = srtStreamer
