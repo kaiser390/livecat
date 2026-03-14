@@ -35,7 +35,8 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from zeroconf import ServiceInfo, Zeroconf
+    from zeroconf import ServiceInfo
+    from zeroconf.asyncio import AsyncZeroconf
     HAS_ZEROCONF = True
 except ImportError:
     HAS_ZEROCONF = False
@@ -66,7 +67,7 @@ _zeroconf = None
 _bonjour_info = None
 
 
-def bonjour_register():
+async def bonjour_register():
     """Register LiveCat service via mDNS so iPhones can auto-discover."""
     global _zeroconf, _bonjour_info
     if not HAS_ZEROCONF:
@@ -74,7 +75,15 @@ def bonjour_register():
         return
 
     import socket
-    local_ip = socket.gethostbyname(socket.gethostname())
+    # Prefer LAN IP (192.168.x.x) over Tailscale/VPN
+    local_ip = None
+    for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+        ip = info[4][0]
+        if ip.startswith('192.168.'):
+            local_ip = ip
+            break
+    if not local_ip:
+        local_ip = socket.gethostbyname(socket.gethostname())
 
     _bonjour_info = ServiceInfo(
         BONJOUR_TYPE,
@@ -88,17 +97,17 @@ def bonjour_register():
         },
         server=f"{socket.gethostname()}.local.",
     )
-    _zeroconf = Zeroconf()
-    _zeroconf.register_service(_bonjour_info)
+    _zeroconf = AsyncZeroconf()
+    await _zeroconf.async_register_service(_bonjour_info)
     print(f"  [Bonjour] Registered: {local_ip}:{WS_PORT} ({BONJOUR_TYPE})")
 
 
-def bonjour_unregister():
+async def bonjour_unregister():
     """Unregister Bonjour service."""
     global _zeroconf, _bonjour_info
     if _zeroconf and _bonjour_info:
-        _zeroconf.unregister_service(_bonjour_info)
-        _zeroconf.close()
+        await _zeroconf.async_unregister_service(_bonjour_info)
+        await _zeroconf.async_close()
         print(f"  [Bonjour] Service unregistered")
 
 
@@ -345,12 +354,11 @@ async def main():
             print(".", end="", flush=True)
             await asyncio.sleep(2)
     if not obs_connected:
-        print(" FAILED")
-        print(f"  Make sure OBS is running with WebSocket enabled (port {OBS_PORT})")
-        return
+        print(" FAILED (will retry when iPhone connects)")
+        print(f"  OBS not running — server will start without OBS")
 
     # Bonjour service registration (auto-discovery)
-    bonjour_register()
+    await bonjour_register()
 
     # WebSocket server
     ws_server = await websockets.serve(handle_client, "0.0.0.0", WS_PORT)
@@ -376,5 +384,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         if is_obs_streaming:
             obs_stop()
-        bonjour_unregister()
+        asyncio.run(bonjour_unregister())
         print("\n  Stopped.")

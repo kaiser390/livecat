@@ -38,4 +38,23 @@ struct CameraConfig: Codable, Sendable {
 
     static let cam1 = CameraConfig(camID: "CAM-1", srtPort: 9000)
     static let cam2 = CameraConfig(camID: "CAM-2", srtPort: 9001)
+
+    // MARK: - Persistence
+
+    private static let storageKey = "LiveCatCameraConfig"
+
+    static func save(_ config: CameraConfig) {
+        if let data = try? JSONEncoder().encode(config) {
+            UserDefaults.standard.set(data, forKey: storageKey)
+        }
+    }
+
+    static func load() -> CameraConfig {
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let config = try? JSONDecoder().decode(CameraConfig.self, from: data)
+        else {
+            return CameraConfig()
+        }
+        return config
+    }
 }

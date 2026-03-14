@@ -8,8 +8,10 @@ import UIKit
 /// Central app state coordinating all modules.
 @Observable @MainActor
 final class AppState {
-    // MARK: - Configuration
-    var config = CameraConfig()
+    // MARK: - Configuration (persisted via UserDefaults)
+    var config: CameraConfig = CameraConfig.load() {
+        didSet { CameraConfig.save(config) }
+    }
 
     // MARK: - Module instances
     let cameraManager = CameraManager()
