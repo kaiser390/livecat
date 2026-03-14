@@ -6,8 +6,11 @@ struct ConfigurationView: View {
     @State private var srtPort: String = ""
     @State private var camID: String = ""
     @State private var selectedResolution: CameraConfig.Resolution = .hd1080p
+    @State private var selectedProtocol: CameraConfig.StreamProtocol = .udp
     @State private var discovery = ServiceDiscoveryManager()
     @State private var showUnsavedAlert = false
+    @State private var showHelpSheet = false
+    @State private var showObsHint = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -24,6 +27,11 @@ struct ConfigurationView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                     Spacer()
+                    Button { showHelpSheet = true } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white.opacity(0.6))
+                    }
                     Button { dismissWithCheck() } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 20))
@@ -42,6 +50,7 @@ struct ConfigurationView: View {
                             // Auto-discovery
                             HStack {
                                 Button {
+                                    showObsHint = false
                                     discovery.startBrowsing()
                                 } label: {
                                     HStack(spacing: 6) {
@@ -68,6 +77,33 @@ struct ConfigurationView: View {
                                 Spacer()
                             }
 
+                            // OBS hint when search done with no results
+                            if showObsHint && discovery.servers.isEmpty {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundStyle(.orange)
+                                            .font(.system(size: 12))
+                                        Text("Server not found. Is live_auto.py running?")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(.orange)
+                                    }
+                                    Text("OBS setup (for direct connection):")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.white.opacity(0.5))
+                                    obsStep("1", "Sources → + → Media Source")
+                                    obsStep("2", "Input: udp://@0.0.0.0:9000")
+                                    obsStep("3", "Format: mpegts → OK")
+                                    obsStep("4", "Enter Mac IP above & tap Start")
+                                }
+                                .padding(10)
+                                .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(.orange.opacity(0.3), lineWidth: 1)
+                                )
+                            }
+
                             // Found servers
                             ForEach(discovery.servers) { server in
                                 Button {
@@ -77,13 +113,24 @@ struct ConfigurationView: View {
                                     #endif
                                 } label: {
                                     HStack(spacing: 8) {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.green)
+                                        Image(systemName: server.type == .obs ? "tv.fill" : "checkmark.circle.fill")
+                                            .foregroundStyle(server.type == .obs ? .purple : .green)
                                             .font(.system(size: 14))
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text(server.name)
-                                                .font(.system(size: 12, weight: .semibold))
-                                                .foregroundStyle(.white)
+                                            HStack(spacing: 4) {
+                                                Text(server.name)
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.white)
+                                                Text(server.type == .obs ? "OBS" : "LiveCat")
+                                                    .font(.system(size: 9, weight: .bold))
+                                                    .foregroundStyle(server.type == .obs ? .purple : .green)
+                                                    .padding(.horizontal, 4)
+                                                    .padding(.vertical, 1)
+                                                    .background(
+                                                        (server.type == .obs ? Color.purple : Color.green).opacity(0.2),
+                                                        in: RoundedRectangle(cornerRadius: 3)
+                                                    )
+                                            }
                                             Text("\(server.host):\(server.port)")
                                                 .font(.system(size: 11, design: .monospaced))
                                                 .foregroundStyle(.white.opacity(0.6))
@@ -122,6 +169,32 @@ struct ConfigurationView: View {
                             }
                         }
 
+                        // Protocol section
+                        settingsSection("PROTOCOL") {
+                            VStack(alignment: .leading, spacing: 6) {
+                                ForEach(CameraConfig.StreamProtocol.allCases, id: \.self) { proto in
+                                    Button {
+                                        selectedProtocol = proto
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: selectedProtocol == proto ? "circle.fill" : "circle")
+                                                .font(.system(size: 12))
+                                                .foregroundStyle(selectedProtocol == proto ? .cyan : .white.opacity(0.4))
+                                            VStack(alignment: .leading, spacing: 1) {
+                                                Text(proto.rawValue)
+                                                    .font(.system(size: 12, weight: .semibold))
+                                                    .foregroundStyle(.white)
+                                                Text(proto == .udp ? "OBS direct — lowest latency" : "live_auto.py — block-loss recovery")
+                                                    .font(.system(size: 10))
+                                                    .foregroundStyle(.white.opacity(0.45))
+                                            }
+                                            Spacer()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // Status section
                         settingsSection("STATUS") {
                             statusRow("Connection", value: appState.isConnected ? "Connected" : "Off",
@@ -143,6 +216,8 @@ struct ConfigurationView: View {
 
                         // Save (highlighted when changes detected)
                         Button {
+                            let networkChanged = serverIP != appState.config.serverIP
+                                || Int(srtPort) ?? 9000 != appState.config.srtPort
                             saveConfig()
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 appState.showSettings = false
@@ -150,6 +225,9 @@ struct ConfigurationView: View {
                             #if os(iOS)
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                             #endif
+                            if networkChanged {
+                                Task { await appState.applyNetworkConfig() }
+                            }
                         } label: {
                             HStack {
                                 if hasChanges {
@@ -180,11 +258,24 @@ struct ConfigurationView: View {
         }
         .ignoresSafeArea()
         .onAppear { loadConfig() }
+        .onChange(of: discovery.isSearching) { _, searching in
+            if !searching && discovery.servers.isEmpty {
+                showObsHint = true
+            }
+        }
+        .sheet(isPresented: $showHelpSheet) {
+            HelpGuideView()
+        }
         .alert("Unsaved Changes", isPresented: $showUnsavedAlert) {
             Button("Save & Close") {
+                let networkChanged = serverIP != appState.config.serverIP
+                    || Int(srtPort) ?? 9000 != appState.config.srtPort
                 saveConfig()
                 withAnimation(.easeInOut(duration: 0.3)) {
                     appState.showSettings = false
+                }
+                if networkChanged {
+                    Task { await appState.applyNetworkConfig() }
                 }
             }
             Button("Discard", role: .destructive) {
@@ -246,6 +337,19 @@ struct ConfigurationView: View {
         }
     }
 
+    private func obsStep(_ number: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(number)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.4))
+                .frame(width: 14)
+            Text(text)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.75))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private func presetButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
@@ -264,6 +368,7 @@ struct ConfigurationView: View {
         || camID != appState.config.camID
         || Int(srtPort) ?? 9000 != appState.config.srtPort
         || selectedResolution != appState.config.resolution
+        || selectedProtocol != appState.config.streamProtocol
     }
 
     private func dismissWithCheck() {
@@ -283,6 +388,7 @@ struct ConfigurationView: View {
         camID = appState.config.camID
         srtPort = "\(appState.config.srtPort)"
         selectedResolution = appState.config.resolution
+        selectedProtocol = appState.config.streamProtocol
     }
 
     private func saveConfig() {
@@ -290,6 +396,7 @@ struct ConfigurationView: View {
         appState.config.camID = camID
         appState.config.srtPort = Int(srtPort) ?? 9000
         appState.config.resolution = selectedResolution
+        appState.config.streamProtocol = selectedProtocol
     }
 
     private func applyPreset(_ preset: CameraConfig) {
@@ -318,6 +425,94 @@ struct ConfigurationView: View {
         case .serious: return .orange
         case .critical: return .red
         @unknown default: return .gray
+        }
+    }
+}
+
+// MARK: - Help Guide Sheet
+
+struct HelpGuideView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+
+                    helpSection(icon: "server.rack", title: "Server Setup (PC)") {
+                        helpStep("1", "Install Python 3 on your PC")
+                        helpStep("2", "Run: python live_auto.py")
+                        helpStep("3", "Server registers on local network automatically")
+                        helpStep("4", "Note your PC's IP address (e.g. 192.168.1.x)")
+                    }
+
+                    helpSection(icon: "iphone", title: "App Setup") {
+                        helpStep("1", "Tap ⚙ to open Settings")
+                        helpStep("2", "Tap Auto Discover — app finds the server")
+                        helpStep("3", "Or enter PC's IP address manually")
+                        helpStep("4", "Tap Start on main screen to begin streaming")
+                    }
+
+                    helpSection(icon: "video.fill", title: "OBS Setup (Without Server)") {
+                        helpStep("1", "Open OBS Studio on your PC/Mac")
+                        helpStep("2", "Sources panel → tap +")
+                        helpStep("3", "Select Media Source → OK")
+                        helpStep("4", "Uncheck Local File")
+                        helpStep("5", "Input:  udp://@0.0.0.0:9000")
+                        helpStep("6", "Input Format:  mpegts")
+                        helpStep("7", "Click OK")
+                        helpStep("8", "Enter Mac/PC IP in app → tap Start")
+                        Text("💡 Make sure your iPhone and PC are on the same Wi-Fi network.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+
+                    helpSection(icon: "wifi", title: "Troubleshooting") {
+                        helpStep("•", "No video in OBS? Check IP address matches your PC")
+                        helpStep("•", "Auto Discover fails? Run live_auto.py on PC first")
+                        helpStep("•", "Choppy video? Move closer to Wi-Fi router")
+                        helpStep("•", "App disconnects? Check PC firewall (allow UDP 9000)")
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle("How to Use")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func helpSection<Content: View>(icon: String, title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundStyle(.blue)
+                    .font(.system(size: 16, weight: .semibold))
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                content()
+            }
+            .padding(12)
+            .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
+    private func helpStep(_ number: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(number)
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(.blue)
+                .frame(width: 18)
+            Text(text)
+                .font(.system(size: 13))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

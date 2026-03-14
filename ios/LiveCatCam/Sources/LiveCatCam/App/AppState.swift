@@ -26,7 +26,7 @@ final class AppState {
     private(set) var serverConnection: ServerConnection?
     private(set) var metadataReporter: MetadataReporter?
     private(set) var videoEncoder: VideoEncoder?
-    private(set) var srtStreamer: SRTStreamer?
+    private(set) var srtStreamer: (any VideoStreaming)?
     private(set) var motorController: (any MotorControlling)?
     private(set) var audioCapture = AudioCapture()
     private(set) var audioEncoder: AudioEncoder?
@@ -237,6 +237,22 @@ final class AppState {
         isLive = false
     }
 
+    // MARK: - Config Apply
+
+    /// Call after saving new serverIP/srtPort to reconnect to the new destination.
+    func applyNetworkConfig() async {
+        let wasLive = isLive
+        if wasLive { await stopStreaming() }
+        srtStreamer = config.streamProtocol == .fec ? SRTStreamer(config: config) : UDPStreamer(config: config)
+        let connection = ServerConnection(config: config)
+        serverConnection = connection
+        metadataReporter = MetadataReporter(connection: connection, config: config)
+        let receiver = commandReceiver
+        Task { await connection.setCommandHandler { command in receiver.dispatch(command) } }
+        if wasLive { await startStreaming() }
+        addDebug("→ \(config.serverIP):\(config.srtPort)")
+    }
+
     // MARK: - Setup
 
     private func setupModules() {
@@ -268,7 +284,7 @@ final class AppState {
             fps: config.fps,
             bitrate: config.bitrate
         )
-        srtStreamer = SRTStreamer(config: config)
+        srtStreamer = config.streamProtocol == .fec ? SRTStreamer(config: config) : UDPStreamer(config: config)
 
         // Connection state handling
         connectionMonitor.onConnectionChanged = { [weak self] connected in

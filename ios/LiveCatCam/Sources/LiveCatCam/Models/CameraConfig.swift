@@ -8,6 +8,19 @@ struct CameraConfig: Codable, Sendable {
     var resolution: Resolution = .hd1080p
     var fps: Int = 30
     var bitrate: Int = 8_000_000
+    var streamProtocol: StreamProtocol = .udp
+
+    enum StreamProtocol: String, Codable, Sendable, CaseIterable {
+        case udp = "UDP"
+        case fec = "UDP+FEC"
+
+        var description: String {
+            switch self {
+            case .udp: return "UDP — 낮은 지연 (OBS 직접 연결)"
+            case .fec: return "UDP+FEC — 안정적 (live_auto.py 경유)"
+            }
+        }
+    }
 
     enum Resolution: String, Codable, Sendable, CaseIterable {
         case hd720p = "720p"
