@@ -33,6 +33,7 @@ final class ServiceDiscoveryManager: @unchecked Sendable {
     private var browser: NWBrowser?
     private let queue = DispatchQueue(label: "com.livecat.discovery", attributes: .concurrent)
     private var scanTask: Task<Void, Never>?
+    private var stopTimer: Task<Void, Never>?
 
     // MARK: - Public API
 
@@ -46,7 +47,7 @@ final class ServiceDiscoveryManager: @unchecked Sendable {
         startOBSScan()
 
         // Auto-stop after 10 seconds
-        scanTask = Task { [weak self] in
+        stopTimer = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 10_000_000_000)
             await MainActor.run { self?.isSearching = false }
         }
@@ -58,6 +59,8 @@ final class ServiceDiscoveryManager: @unchecked Sendable {
         browser = nil
         scanTask?.cancel()
         scanTask = nil
+        stopTimer?.cancel()
+        stopTimer = nil
         isSearching = false
     }
 
@@ -144,7 +147,7 @@ final class ServiceDiscoveryManager: @unchecked Sendable {
 
     private func probeOBS(ip: String) async {
         // TCP connect to OBS WebSocket port 4455
-        let connected = await tcpProbe(host: ip, port: 4455, timeout: 0.8)
+        let connected = await tcpProbe(host: ip, port: 4455, timeout: 1.5)
         guard connected else { return }
 
         Log.network.info("[Discovery] OBS found at \(ip):4455")

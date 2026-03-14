@@ -521,6 +521,21 @@ struct HelpGuideView: View {
                             .padding(.top, 4)
                     }
 
+                    helpSection(icon: "antenna.radiowaves.left.and.right", title: "Auto Discover — OBS WebSocket Setup") {
+                        Text("For Auto Discover to find OBS, enable WebSocket Server in OBS:")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        helpStep("1", "Open OBS → Tools → WebSocket Server Settings")
+                        helpStep("2", "Check \"Enable WebSocket Server\"")
+                        helpStep("3", "Server Port: 4455 (default)")
+                        helpStep("4", "Click OK → Restart OBS")
+                        helpStep("5", "Tap Auto Discover in app — OBS will appear")
+                        Text("Without WebSocket Server enabled, you can still connect manually by entering the IP address.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+
                     helpSection(icon: "wifi", title: "Troubleshooting") {
                         helpStep("•", "No video in OBS? Check OBS Media Source settings (protocol, port, format)")
                         helpStep("•", "Still no video? Verify IP address matches your PC/Mac")
