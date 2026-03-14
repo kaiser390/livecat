@@ -511,6 +511,17 @@ struct HelpGuideView: View {
                             .padding(.top, 4)
                     }
 
+                    helpSection(icon: "network", title: "Network Environments") {
+                        helpStep("🏠", "Same Wi-Fi — Just enter PC/Mac IP. Works out of the box.")
+                        helpStep("🌐", "Different Wi-Fi — Set up port forwarding on OBS router (port 9000 + 8081).")
+                        helpStep("📱", "Cellular (LTE/5G) — Use Tailscale VPN on both iPhone and PC. Enter Tailscale IP (100.x.x.x).")
+                        helpStep("📡", "Hotspot — Connect PC to iPhone hotspot. Enter PC IP shown in hotspot settings.")
+                        Text("Tip: Install Tailscale (free) for the easiest remote streaming setup — no port forwarding needed!")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                    }
+
                     helpSection(icon: "wifi", title: "Troubleshooting") {
                         helpStep("•", "No video in OBS? Check IP address matches your PC")
                         helpStep("•", "Auto Discover fails? Run live_auto.py on PC first")
