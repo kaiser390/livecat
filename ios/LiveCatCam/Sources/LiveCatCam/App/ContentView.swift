@@ -25,7 +25,7 @@ struct ContentView: View {
                     .onTapGesture { location in
                         handleTap(at: location, in: geometry.size)
                     }
-                    .onLongPressGesture(minimumDuration: 0.5) {
+                    .onLongPressGesture(minimumDuration: 1.0) {
                         // Long press: toggle controls
                         withAnimation(.easeInOut(duration: 0.25)) {
                             appState.showControls.toggle()
@@ -41,6 +41,25 @@ struct ContentView: View {
                 if appState.showControls {
                     StatusOverlayView()
                         .transition(.opacity)
+                } else {
+                    // Restore button (center bottom) when UI is hidden
+                    VStack {
+                        Spacer()
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                appState.showControls = true
+                            }
+                            #if os(iOS)
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            #endif
+                        } label: {
+                            Image(systemName: "chevron.up.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(.white.opacity(0.4))
+                        }
+                        .padding(.bottom, 20)
+                    }
+                    .transition(.opacity)
                 }
 
                 // Settings panel (slide from right)
