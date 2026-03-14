@@ -9,7 +9,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.1"
-    CURRENT_PROJECT_VERSION: 77
+    CURRENT_PROJECT_VERSION: 78
     SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     SUPPORTS_MACCATALYST: false
 
@@ -36,7 +36,10 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: false
         SWIFT_OBJC_BRIDGING_HEADER: SupportFiles/LiveCatCam-Bridging-Header.h
-        OTHER_LDFLAGS: ""
+        OTHER_LDFLAGS: "-lc++"
+    dependencies:
+      - framework: Frameworks/libsrt.xcframework
+        embed: true
     entitlements:
       path: SupportFiles/LiveCatCam.entitlements
 
