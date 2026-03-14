@@ -21,6 +21,9 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
     private var audioFrameCount: UInt64 = 0
     private let startTime = CFAbsoluteTimeGetCurrent()
 
+    // Serial queue — serializes all state mutations (CC counters, frameCount, etc.)
+    private let queue = DispatchQueue(label: "com.livecat.udp", qos: .userInteractive)
+
     // Constants
     private let tsPacketSize = 188
     private let patPid: UInt16 = 0x0000
@@ -72,113 +75,65 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
         Log.streaming.info("MPEG-TS/UDP streamer started → \(self.config.serverIP):\(self.config.srtPort)")
     }
 
-    /// Build MPEG-TS data for a video frame (used by SRTStreamer FEC wrapper)
+    /// Build MPEG-TS data for a video frame (used by FECStreamer / SRTStreamer)
     func buildTSData(encodedData: Data, isKeyframe: Bool) -> Data {
-        var tsData = Data()
-        tsData.append(buildPAT())
-        tsData.append(buildPMT())
-        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-        let pts = UInt64(elapsed * 90000)
-        tsData.append(buildPES(from: encodedData, pts: pts, isKeyframe: isKeyframe))
-        frameCount += 1
-        return tsData
+        queue.sync {
+            var tsData = Data()
+            tsData.append(buildPAT())
+            tsData.append(buildPMT())
+            let pts = frameCount * UInt64(90000 / max(config.fps, 1))
+            tsData.append(buildPES(from: encodedData, pts: pts, isKeyframe: isKeyframe))
+            frameCount += 1
+            return tsData
+        }
     }
 
-    /// Build MPEG-TS data for an audio frame (used by SRTStreamer FEC wrapper)
+    /// Build MPEG-TS data for an audio frame (used by FECStreamer / SRTStreamer)
     func buildAudioTSData(aacData: Data) -> Data {
-        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-        let pts = UInt64(elapsed * 90000)
-        var pesPacket = Data()
-        pesPacket.append(contentsOf: [0x00, 0x00, 0x01])
-        pesPacket.append(0xC0)
-        let pesLen = UInt16(min(3 + 5 + aacData.count, 65535))
-        pesPacket.append(UInt8((pesLen >> 8) & 0xFF))
-        pesPacket.append(UInt8(pesLen & 0xFF))
-        pesPacket.append(0x80); pesPacket.append(0x80); pesPacket.append(0x05)
-        pesPacket.append(encodePTS(pts: pts))
-        pesPacket.append(aacData)
-        audioFrameCount += 1
-        return muxIntoTS(pesData: pesPacket, pid: audioPid, isKeyframe: false, cc: &audioCc)
+        queue.sync {
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            let pts = UInt64(elapsed * 90000)
+            var pesPacket = Data()
+            pesPacket.append(contentsOf: [0x00, 0x00, 0x01])
+            pesPacket.append(0xC0)
+            let pesLen = UInt16(min(3 + 5 + aacData.count, 65535))
+            pesPacket.append(UInt8((pesLen >> 8) & 0xFF))
+            pesPacket.append(UInt8(pesLen & 0xFF))
+            pesPacket.append(0x80); pesPacket.append(0x80); pesPacket.append(0x05)
+            pesPacket.append(encodePTS(pts: pts))
+            pesPacket.append(aacData)
+            audioFrameCount += 1
+            return muxIntoTS(pesData: pesPacket, pid: audioPid, isKeyframe: false, cc: &audioCc)
+        }
     }
 
     func write(encodedData: Data, isKeyframe: Bool = false) {
-        guard isActive, let connection else { return }
+        queue.async { [self] in
+            guard isActive, let connection else { return }
 
-        // Build MPEG-TS packets
-        var tsData = Data()
+            var tsData = Data()
+            tsData.append(buildPAT())
+            tsData.append(buildPMT())
 
-        // Send PAT + PMT on EVERY frame (376 bytes overhead, negligible vs video)
-        // This ensures any receiver can join the stream at any point
-        let pat = buildPAT()
-        let pmt = buildPMT()
-        tsData.append(pat)
-        tsData.append(pmt)
+            // PTS: frame-count based (deterministic, no NTP jitter)
+            let pts = frameCount * UInt64(90000 / max(config.fps, 1))
+            tsData.append(buildPES(from: encodedData, pts: pts, isKeyframe: isKeyframe))
+            frameCount += 1
 
-        // Verify PAT/PMT integrity
-        if frameCount == 0 || frameCount % 60 == 0 {
-            Log.streaming.info("[MUX] PAT sync=0x\(String(pat[0], radix:16)) PID=0x\(String(format:"%02X%02X", pat[1], pat[2]))")
-            Log.streaming.info("[MUX] PMT sync=0x\(String(pmt[0], radix:16)) PID=0x\(String(format:"%02X%02X", pmt[1], pmt[2]))")
-        }
-
-        // Calculate PTS (90kHz clock)
-        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-        let pts = UInt64(elapsed * 90000)
-
-        // Scan input H.264 data for NAL types (debug)
-        if isKeyframe || frameCount % 60 == 0 {
-            var nalTypes: [UInt8] = []
-            var scanOff = 0
-            let bytes = [UInt8](encodedData)
-            while scanOff < bytes.count - 4 {
-                if bytes[scanOff] == 0 && bytes[scanOff+1] == 0 && bytes[scanOff+2] == 0 && bytes[scanOff+3] == 1 {
-                    if scanOff + 4 < bytes.count {
-                        nalTypes.append(bytes[scanOff+4] & 0x1F)
-                    }
-                    scanOff += 4
-                } else {
-                    scanOff += 1
-                }
+            if frameCount <= 3 || isKeyframe {
+                Log.streaming.info("[MUX] frame#\(frameCount) key=\(isKeyframe) pts=\(pts) size=\(encodedData.count)B")
             }
-            let names = nalTypes.map { t -> String in
-                switch t { case 1: return "P"; case 5: return "IDR"; case 6: return "SEI"; case 7: return "SPS"; case 8: return "PPS"; default: return "\(t)" }
-            }
-            Log.streaming.info("[MUX] frame#\(self.frameCount) key=\(isKeyframe) inputNALs=\(names) inputSize=\(encodedData.count)B")
-        }
 
-        // Mux H.264 NAL units into PES → TS packets
-        let pesPackets = buildPES(from: encodedData, pts: pts, isKeyframe: isKeyframe)
-        tsData.append(pesPackets)
-
-        frameCount += 1
-
-        // Debug: log TS packet composition periodically
-        if frameCount <= 3 || frameCount % 60 == 0 {
-            let tsPacketCount = tsData.count / tsPacketSize
-            var pidCounts: [UInt16: Int] = [:]
-            for i in 0..<tsPacketCount {
-                let base = i * tsPacketSize
-                if tsData[base] == 0x47 {
-                    let pid = (UInt16(tsData[base+1] & 0x1F) << 8) | UInt16(tsData[base+2])
-                    pidCounts[pid, default: 0] += 1
-                }
-            }
-            let pidInfo = pidCounts.map { "0x\(String(format:"%04X", $0.key)):\($0.value)" }.joined(separator: " ")
-            Log.streaming.info("[MUX] frame#\(self.frameCount) totalTS=\(tsPacketCount) PIDs=[\(pidInfo)] totalBytes=\(tsData.count)")
-        }
-
-        // Send over UDP
-        sendChunks(tsData, over: connection)
-
-        // Log send stats periodically
-        if frameCount <= 3 || frameCount % 300 == 0 {
-            Log.streaming.info("[MUX] Stats: sent=\(self.packetsSent)pkts \(self.bytesSent)B vFrames=\(self.frameCount) aFrames=\(self.audioFrameCount)")
+            sendChunks(tsData, over: connection)
         }
     }
 
     func stop() {
-        isActive = false
-        connection?.cancel()
-        connection = nil
+        queue.sync {
+            isActive = false
+            connection?.cancel()
+            connection = nil
+        }
         Log.streaming.info("MPEG-TS/UDP streamer stopped. Sent \(self.packetsSent) packets, \(self.bytesSent) bytes")
     }
 
@@ -346,37 +301,30 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
 
     /// Write AAC audio data (ADTS frame) into MPEG-TS and send via UDP
     func writeAudio(aacData: Data) {
-        guard isActive, let connection else { return }
+        queue.async { [self] in
+            guard isActive, let connection else { return }
 
-        // Calculate audio PTS (90kHz clock)
-        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-        let pts = UInt64(elapsed * 90000)
+            // Audio PTS: wall-clock based (AAC frames don't have stable frame count)
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            let pts = UInt64(elapsed * 90000)
 
-        // Build audio PES
-        var pesPacket = Data()
-        pesPacket.append(contentsOf: [0x00, 0x00, 0x01])  // PES start code
-        pesPacket.append(0xC0)  // Stream ID: audio stream 0
+            var pesPacket = Data()
+            pesPacket.append(contentsOf: [0x00, 0x00, 0x01])
+            pesPacket.append(0xC0)
+            let pesPayloadLen = 3 + 5 + aacData.count
+            let pesLen = UInt16(min(pesPayloadLen, 65535))
+            pesPacket.append(UInt8((pesLen >> 8) & 0xFF))
+            pesPacket.append(UInt8(pesLen & 0xFF))
+            pesPacket.append(0x80)
+            pesPacket.append(0x80)
+            pesPacket.append(0x05)
+            pesPacket.append(encodePTS(pts: pts))
+            pesPacket.append(aacData)
 
-        // PES packet length (audio frames are small enough to specify length)
-        let pesPayloadLen = 3 + 5 + aacData.count  // flags(1) + pts_flags(1) + header_len(1) + PTS(5) + data
-        let pesLen = UInt16(min(pesPayloadLen, 65535))
-        pesPacket.append(UInt8((pesLen >> 8) & 0xFF))
-        pesPacket.append(UInt8(pesLen & 0xFF))
-
-        pesPacket.append(0x80)  // MPEG-2, no alignment needed for audio
-        pesPacket.append(0x80)  // PTS only
-        pesPacket.append(0x05)  // PES header data length = 5
-
-        pesPacket.append(encodePTS(pts: pts))
-        pesPacket.append(aacData)
-
-        // Mux into TS packets
-        let tsData = muxIntoTS(pesData: pesPacket, pid: audioPid, isKeyframe: false, cc: &audioCc)
-
-        audioFrameCount += 1
-
-        // Send over UDP
-        sendChunks(tsData, over: connection)
+            let tsData = muxIntoTS(pesData: pesPacket, pid: audioPid, isKeyframe: false, cc: &audioCc)
+            audioFrameCount += 1
+            sendChunks(tsData, over: connection)
+        }
     }
 
     /// Encode a 33-bit PTS into the 5-byte MPEG-TS format
@@ -472,13 +420,13 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
                     packet.replaceSubrange(headerLen..<(headerLen + remaining),
                                           with: pesData[offset..<(offset + remaining)])
                 } else {
-                    // remaining is 183 or 184
-                    packet[3] = 0x10 | (cc & 0x0F)
+                    // remaining = 183: stuffingLength = -1
+                    // Use adaptation_field_length=0 (empty adaptation field, 1 byte used for length)
+                    // Layout: [4 header][1 adapt_len=0][183 payload] = 188 ✓
+                    packet[3] = 0x30 | (cc & 0x0F)  // adaptation + payload
                     cc = (cc + 1) & 0x0F
-                    packet.replaceSubrange(4..<(4 + remaining), with: pesData[offset..<(offset + remaining)])
-                    for i in (4 + remaining)..<tsPacketSize {
-                        packet[i] = 0xFF
-                    }
+                    packet[4] = 0x00  // adaptation_field_length = 0 (no field content)
+                    packet.replaceSubrange(5..<(5 + remaining), with: pesData[offset..<(offset + remaining)])
                 }
                 offset = pesData.count
                 first = false
@@ -536,7 +484,8 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
         Log.streaming.info("Reconnecting UDP...")
         connection?.cancel()
         connection = nil
-        DispatchQueue.global().asyncAfter(deadline: .now() + 2) { [weak self] in
+        isActive = false  // reset so start() guard passes
+        queue.asyncAfter(deadline: .now() + 2) { [weak self] in
             try? self?.start()
         }
     }

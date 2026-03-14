@@ -51,6 +51,9 @@ final class AppState {
     // Latest pixel buffer for tap-to-track initialization
     private var latestPixelBuffer: CVPixelBuffer?
 
+    // Frame processing guard — prevents Task pile-up at 30fps
+    private var isProcessingFrame = false
+
     // MARK: - UI state
     var showControls = true
     var showSettings = false
@@ -118,10 +121,21 @@ final class AppState {
         }
 
         cameraManager.onFrame = { [weak self] pixelBuffer, timestamp in
-            guard let self else { return }
-            self.lastFrameTime = Date().timeIntervalSince1970
-            Task {
+            // Run on MainActor: thread-safe property access + frame drop guard
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.lastFrameTime = Date().timeIntervalSince1970
+
+                // Always encode every frame for smooth video (VTCompressionSession is thread-safe)
+                if self.isLive {
+                    self.videoEncoder?.encode(pixelBuffer: pixelBuffer, presentationTime: timestamp)
+                }
+
+                // Detection/tracking/UI — drop frame if previous still processing
+                guard !self.isProcessingFrame else { return }
+                self.isProcessingFrame = true
                 await self.processFrame(pixelBuffer: pixelBuffer, timestamp: timestamp)
+                self.isProcessingFrame = false
             }
         }
         cameraManager.start()
@@ -434,10 +448,7 @@ final class AppState {
         // 4. Score activity
         let scoreResult = await activityScorer.score(cats: cats, cameraID: config.camID)
 
-        // 6. Encode video frame (only when streaming)
-        if isLive {
-            videoEncoder?.encode(pixelBuffer: pixelBuffer, presentationTime: timestamp)
-        }
+        // 6. Video encoding moved to onFrame callback (every frame, thread-safe)
 
         // 7. Update metadata reporter
         let catPositions = await catTracker.toCatPositions()
