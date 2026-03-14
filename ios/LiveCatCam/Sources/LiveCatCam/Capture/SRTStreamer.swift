@@ -68,31 +68,38 @@ final class SRTStreamer: @unchecked Sendable, VideoStreaming {
     }
 
     func write(encodedData: Data, isKeyframe: Bool = false) {
-        guard isActive, sock != SRT_INVALID_SOCK else { return }
-        let tsData = muxer.buildTSData(encodedData: encodedData, isKeyframe: isKeyframe)
-        sendSRT(tsData)
+        queue.async { [self] in
+            guard isActive, sock != SRT_INVALID_SOCK else { return }
+            let tsData = muxer.buildTSData(encodedData: encodedData, isKeyframe: isKeyframe)
+            sendSRT(tsData)
+        }
     }
 
     func writeAudio(aacData: Data) {
-        guard isActive, sock != SRT_INVALID_SOCK else { return }
-        let tsData = muxer.buildAudioTSData(aacData: aacData)
-        sendSRT(tsData)
+        queue.async { [self] in
+            guard isActive, sock != SRT_INVALID_SOCK else { return }
+            let tsData = muxer.buildAudioTSData(aacData: aacData)
+            sendSRT(tsData)
+        }
     }
 
     func stop() {
-        guard isActive else { return }
-        isActive = false
-        if sock != SRT_INVALID_SOCK {
-            srt_close(sock)
-            sock = SRT_INVALID_SOCK
+        queue.sync {
+            guard isActive else { return }
+            isActive = false
+            if sock != SRT_INVALID_SOCK {
+                srt_close(sock)
+                sock = SRT_INVALID_SOCK
+            }
+            srt_cleanup()
         }
-        srt_cleanup()
         Log.streaming.info("[SRT] Stopped")
     }
 
     // MARK: - Private
 
     private func sendSRT(_ data: Data) {
+        // Called within queue.async — already serialized
         let maxChunk = 1316  // 7 × 188 bytes, fits in SRT payload
         var offset = 0
         while offset < data.count {

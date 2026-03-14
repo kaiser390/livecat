@@ -263,10 +263,12 @@ final class AppState {
 
     // MARK: - Config Apply
 
-    /// Call after saving new serverIP/srtPort to reconnect to the new destination.
+    /// Call after saving new serverIP/srtPort/protocol to reconnect to the new destination.
     func applyNetworkConfig() async {
         let wasLive = isLive
         if wasLive { await stopStreaming() }
+        // Stop previous streamer before replacing (clean up old connection)
+        srtStreamer?.stop()
         switch config.streamProtocol {
         case .udp: srtStreamer = UDPStreamer(config: config)
         case .fec: srtStreamer = FECStreamer(config: config)
@@ -278,7 +280,7 @@ final class AppState {
         let receiver = commandReceiver
         Task { await connection.setCommandHandler { command in receiver.dispatch(command) } }
         if wasLive { await startStreaming() }
-        addDebug("→ \(config.serverIP):\(config.srtPort)")
+        addDebug("→ \(config.streamProtocol.rawValue) \(config.serverIP):\(config.srtPort)")
     }
 
     // MARK: - Setup

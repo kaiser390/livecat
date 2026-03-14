@@ -184,7 +184,9 @@ struct ConfigurationView: View {
                                                 Text(proto.rawValue)
                                                     .font(.system(size: 12, weight: .semibold))
                                                     .foregroundStyle(.white)
-                                                Text(proto == .udp ? "OBS direct — lowest latency" : "live_auto.py — block-loss recovery")
+                                                Text(proto == .udp ? "OBS direct — lowest latency"
+                                     : proto == .fec ? "FEC parity — block-loss recovery"
+                                     : "SRT — reliable, ARQ retransmit")
                                                     .font(.system(size: 10))
                                                     .foregroundStyle(.white.opacity(0.45))
                                             }
@@ -218,6 +220,7 @@ struct ConfigurationView: View {
                         Button {
                             let networkChanged = serverIP != appState.config.serverIP
                                 || Int(srtPort) ?? 9000 != appState.config.srtPort
+                                || selectedProtocol != appState.config.streamProtocol
                             saveConfig()
                             withAnimation(.easeInOut(duration: 0.3)) {
                                 appState.showSettings = false
@@ -270,6 +273,7 @@ struct ConfigurationView: View {
             Button("Save & Close") {
                 let networkChanged = serverIP != appState.config.serverIP
                     || Int(srtPort) ?? 9000 != appState.config.srtPort
+                    || selectedProtocol != appState.config.streamProtocol
                 saveConfig()
                 withAnimation(.easeInOut(duration: 0.3)) {
                     appState.showSettings = false
