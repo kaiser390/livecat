@@ -17,9 +17,10 @@ import sys
 import time
 from datetime import datetime
 
-# Fix OBS WebSocket locale issue on Windows
+# Fix OBS WebSocket locale/encoding issue on Windows
 os.environ['LANG'] = 'en_US.UTF-8'
 os.environ['LC_ALL'] = 'en_US.UTF-8'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 
 try:
     import websockets
@@ -33,6 +34,12 @@ except ImportError:
     print("[ERROR] pip install obsws-python")
     sys.exit(1)
 
+try:
+    from zeroconf import ServiceInfo, Zeroconf
+    HAS_ZEROCONF = True
+except ImportError:
+    HAS_ZEROCONF = False
+
 # Config
 WS_PORT = 8081
 HTTP_PORT = 8082
@@ -40,6 +47,8 @@ OBS_HOST = "localhost"
 OBS_PORT = 4455
 IDLE_TIMEOUT = 5  # seconds without metadata → stop OBS
 DRY_RUN = "--dry-run" in sys.argv  # skip YouTube streaming, record locally only
+BONJOUR_TYPE = "_livecat._tcp.local."
+BONJOUR_NAME = "LiveCat Server._livecat._tcp.local."
 
 # State
 clients = set()
@@ -52,6 +61,47 @@ def ts():
     return datetime.now().strftime('%H:%M:%S')
 
 
+# Bonjour / mDNS
+_zeroconf = None
+_bonjour_info = None
+
+
+def bonjour_register():
+    """Register LiveCat service via mDNS so iPhones can auto-discover."""
+    global _zeroconf, _bonjour_info
+    if not HAS_ZEROCONF:
+        print(f"  [Bonjour] zeroconf not installed — skipping")
+        return
+
+    import socket
+    local_ip = socket.gethostbyname(socket.gethostname())
+
+    _bonjour_info = ServiceInfo(
+        BONJOUR_TYPE,
+        BONJOUR_NAME,
+        addresses=[socket.inet_aton(local_ip)],
+        port=WS_PORT,
+        properties={
+            "http_port": str(HTTP_PORT),
+            "version": "1.0",
+            "platform": sys.platform,
+        },
+        server=f"{socket.gethostname()}.local.",
+    )
+    _zeroconf = Zeroconf()
+    _zeroconf.register_service(_bonjour_info)
+    print(f"  [Bonjour] Registered: {local_ip}:{WS_PORT} ({BONJOUR_TYPE})")
+
+
+def bonjour_unregister():
+    """Unregister Bonjour service."""
+    global _zeroconf, _bonjour_info
+    if _zeroconf and _bonjour_info:
+        _zeroconf.unregister_service(_bonjour_info)
+        _zeroconf.close()
+        print(f"  [Bonjour] Service unregistered")
+
+
 def obs_start():
     """Start OBS streaming + recording"""
     global is_obs_streaming, stream_start_time
@@ -59,17 +109,15 @@ def obs_start():
         return True
 
     try:
-        ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
-        if DRY_RUN:
-            print(f"  [{ts()}] DRY RUN — skip YouTube stream, record only")
+        ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT, timeout=5)
+        # Always start YouTube stream (--dry-run only skips post-live upload)
+        status = ws.get_stream_status()
+        already_streaming = status.output_active
+        if not already_streaming:
+            ws.start_stream()
+            print(f"  [{ts()}] OBS STREAM STARTED")
         else:
-            status = ws.get_stream_status()
-            already_streaming = status.output_active
-            if not already_streaming:
-                ws.start_stream()
-                print(f"  [{ts()}] OBS STREAM STARTED")
-            else:
-                print(f"  [{ts()}] OBS already streaming")
+            print(f"  [{ts()}] OBS already streaming")
         # Always start recording
         try:
             rec_status = ws.get_record_status()
@@ -97,13 +145,13 @@ def obs_stop():
 
     try:
         ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
-        if not DRY_RUN:
-            status = ws.get_stream_status()
-            if status.output_active:
-                duration = status.output_duration // 1000
-                m, s = divmod(duration, 60)
-                print(f"  [{ts()}] Stream duration: {m:.0f}m {s:.0f}s")
-                ws.stop_stream()
+        # Always stop YouTube stream
+        status = ws.get_stream_status()
+        if status.output_active:
+            duration = status.output_duration // 1000
+            m, s = divmod(duration, 60)
+            print(f"  [{ts()}] Stream duration: {m:.0f}m {s:.0f}s")
+            ws.stop_stream()
         # Stop local recording
         try:
             rec_status = ws.get_record_status()
@@ -163,8 +211,14 @@ async def handle_client(websocket):
                     print(f"  [{ts()}] Registered: {cam_id}")
                     await websocket.send(json.dumps({
                         "type": "registered",
+                        "cam_id": cam_id,
                         "status": "ok"
                     }))
+                    # Register = iPhone tapped Start → start OBS immediately
+                    last_metadata_time = time.time()
+                    if not is_obs_streaming:
+                        print(f"  [{ts()}] Register received → Starting OBS...")
+                        obs_start()
                 elif msg_type == 'response':
                     print(f"  [{ts()}] Response: {data}")
                 else:
@@ -175,7 +229,7 @@ async def handle_client(websocket):
                         obs_start()
 
             except json.JSONDecodeError:
-                pass
+                print(f"  [{ts()}] Non-JSON message: {message[:100]}")
     except websockets.ConnectionClosed:
         pass
     finally:
@@ -262,12 +316,11 @@ async def main():
     print(f"  LiveCat Auto Live [{mode}]")
     print("=" * 50)
     print()
+    print("  Metadata arriving  -> OBS ON  -> YouTube Live")
     if DRY_RUN:
-        print("  Metadata arriving  -> OBS RECORD (no YouTube)")
-        print("  No metadata 5s     -> OBS STOP -> post-live dry-run")
+        print("  No metadata 5s     -> OBS OFF -> post-live (upload skipped)")
     else:
-        print("  Metadata arriving  -> OBS ON  -> YouTube Live")
-        print("  No metadata 5s     -> OBS OFF -> YouTube auto-ends")
+        print("  No metadata 5s     -> OBS OFF -> post-live -> YouTube upload")
     print()
 
     # Verify OBS connection (retry up to 60s for OBS to start)
@@ -275,7 +328,7 @@ async def main():
     print(f"  [OBS] Connecting to OBS...", end="", flush=True)
     for attempt in range(30):
         try:
-            ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT)
+            ws = obsws.ReqClient(host=OBS_HOST, port=OBS_PORT, timeout=5)
             status = ws.get_stream_status()
             streaming = status.output_active
             print(f" OK (currently {'LIVE' if streaming else 'OFF'})")
@@ -295,6 +348,9 @@ async def main():
         print(" FAILED")
         print(f"  Make sure OBS is running with WebSocket enabled (port {OBS_PORT})")
         return
+
+    # Bonjour service registration (auto-discovery)
+    bonjour_register()
 
     # WebSocket server
     ws_server = await websockets.serve(handle_client, "0.0.0.0", WS_PORT)
@@ -320,4 +376,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         if is_obs_streaming:
             obs_stop()
+        bonjour_unregister()
         print("\n  Stopped.")

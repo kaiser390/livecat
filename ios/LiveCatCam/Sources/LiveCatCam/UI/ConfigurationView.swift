@@ -6,17 +6,15 @@ struct ConfigurationView: View {
     @State private var srtPort: String = ""
     @State private var camID: String = ""
     @State private var selectedResolution: CameraConfig.Resolution = .hd1080p
+    @State private var discovery = ServiceDiscoveryManager()
+    @State private var showUnsavedAlert = false
 
     var body: some View {
         HStack(spacing: 0) {
-            // Tap outside to close
+            // Tap outside to close (with unsaved check)
             Color.clear
                 .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        appState.showSettings = false
-                    }
-                }
+                .onTapGesture { dismissWithCheck() }
 
             // Settings panel
             VStack(alignment: .leading, spacing: 0) {
@@ -26,11 +24,7 @@ struct ConfigurationView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.white)
                     Spacer()
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            appState.showSettings = false
-                        }
-                    } label: {
+                    Button { dismissWithCheck() } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 20))
                             .foregroundStyle(.white.opacity(0.5))
@@ -45,6 +39,68 @@ struct ConfigurationView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         // Server section
                         settingsSection("SERVER") {
+                            // Auto-discovery
+                            HStack {
+                                Button {
+                                    discovery.startBrowsing()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        if discovery.isSearching {
+                                            ProgressView()
+                                                .scaleEffect(0.7)
+                                                .tint(.white)
+                                        }
+                                        Image(systemName: "antenna.radiowaves.left.and.right")
+                                        Text(discovery.isSearching ? "Searching..." : "Auto Discover")
+                                    }
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 7)
+                                    .background(
+                                        discovery.isSearching
+                                            ? Color.orange.opacity(0.4)
+                                            : Color(red: 0.2, green: 0.6, blue: 0.3),
+                                        in: RoundedRectangle(cornerRadius: 6)
+                                    )
+                                }
+                                .disabled(discovery.isSearching)
+                                Spacer()
+                            }
+
+                            // Found servers
+                            ForEach(discovery.servers) { server in
+                                Button {
+                                    serverIP = server.host
+                                    #if os(iOS)
+                                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                    #endif
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                            .font(.system(size: 14))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(server.name)
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                            Text("\(server.host):\(server.port)")
+                                                .font(.system(size: 11, design: .monospaced))
+                                                .foregroundStyle(.white.opacity(0.6))
+                                        }
+                                        Spacer()
+                                        Text("Use")
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundStyle(.white.opacity(0.8))
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                                    }
+                                    .padding(8)
+                                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                                }
+                            }
+
                             settingsField("IP Address", text: $serverIP, placeholder: "192.168.123.xxx")
                             settingsField("SRT Port", text: $srtPort, placeholder: "9000")
                         }
@@ -85,7 +141,7 @@ struct ConfigurationView: View {
                             }
                         }
 
-                        // Save
+                        // Save (highlighted when changes detected)
                         Button {
                             saveConfig()
                             withAnimation(.easeInOut(duration: 0.3)) {
@@ -95,12 +151,25 @@ struct ConfigurationView: View {
                             UINotificationFeedbackGenerator().notificationOccurred(.success)
                             #endif
                         } label: {
-                            Text("Save")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .background(Color(red: 0.2, green: 0.5, blue: 1.0), in: RoundedRectangle(cornerRadius: 8))
+                            HStack {
+                                if hasChanges {
+                                    Image(systemName: "circle.fill")
+                                        .font(.system(size: 6))
+                                        .foregroundStyle(.yellow)
+                                }
+                                Text(hasChanges ? "Save Changes" : "Save")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                hasChanges
+                                    ? Color.orange
+                                    : Color(red: 0.2, green: 0.5, blue: 1.0),
+                                in: RoundedRectangle(cornerRadius: 8)
+                            )
+                            .animation(.easeInOut(duration: 0.2), value: hasChanges)
                         }
                     }
                     .padding(16)
@@ -111,6 +180,22 @@ struct ConfigurationView: View {
         }
         .ignoresSafeArea()
         .onAppear { loadConfig() }
+        .alert("Unsaved Changes", isPresented: $showUnsavedAlert) {
+            Button("Save & Close") {
+                saveConfig()
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    appState.showSettings = false
+                }
+            }
+            Button("Discard", role: .destructive) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    appState.showSettings = false
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You have unsaved changes. Save before closing?")
+        }
     }
 
     // MARK: - Components
@@ -169,6 +254,25 @@ struct ConfigurationView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 7)
                 .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+        }
+    }
+
+    // MARK: - Change Detection
+
+    private var hasChanges: Bool {
+        serverIP != appState.config.serverIP
+        || camID != appState.config.camID
+        || Int(srtPort) ?? 9000 != appState.config.srtPort
+        || selectedResolution != appState.config.resolution
+    }
+
+    private func dismissWithCheck() {
+        if hasChanges {
+            showUnsavedAlert = true
+        } else {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                appState.showSettings = false
+            }
         }
     }
 

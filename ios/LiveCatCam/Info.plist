@@ -18,6 +18,7 @@
     <key>NSBonjourServices</key>
     <array>
         <string>_http._tcp</string>
+        <string>_livecat._tcp</string>
     </array>
 
     <!-- Force landscape only -->
