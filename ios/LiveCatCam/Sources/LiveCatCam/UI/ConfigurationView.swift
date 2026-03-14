@@ -479,17 +479,6 @@ struct HelpGuideView: View {
                             .padding(.top, 4)
                     }
 
-                    helpSection(icon: "server.rack", title: "Advanced — Server Mode (Optional)") {
-                        helpStep("1", "Install Python 3 on your PC")
-                        helpStep("2", "Run: python live_auto.py")
-                        helpStep("3", "App auto-discovers the server via Bonjour")
-                        helpStep("4", "Enables: auto YouTube upload, multi-cam, AI features")
-                        Text("Server mode is optional. Most users only need OBS Direct mode above.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-                    }
-
                     helpSection(icon: "shield.checkered", title: "OBS Setup — SRT (Recommended)") {
                         helpStep("1", "Open OBS Studio on your PC/Mac")
                         helpStep("2", "Sources panel → tap +")
