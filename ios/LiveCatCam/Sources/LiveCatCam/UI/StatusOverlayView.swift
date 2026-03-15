@@ -152,13 +152,20 @@ struct StatusOverlayView: View {
 
     private var bottomBar: some View {
         HStack(spacing: 0) {
-            // Mic button
-            OverlayButton(icon: appState.isMuted ? "mic.slash.fill" : "mic.fill",
-                          color: appState.isMuted ? .red : .white) {
-                appState.isMuted.toggle()
-                #if os(iOS)
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                #endif
+            // Mic button + sample rate
+            HStack(spacing: 2) {
+                OverlayButton(icon: appState.isMuted ? "mic.slash.fill" : "mic.fill",
+                              color: appState.isMuted ? .red : .white) {
+                    appState.isMuted.toggle()
+                    #if os(iOS)
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    #endif
+                }
+                if appState.isLive && appState.audioSampleRate > 0 {
+                    Text("\(appState.audioSampleRate / 1000)k")
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
             }
 
             Spacer()

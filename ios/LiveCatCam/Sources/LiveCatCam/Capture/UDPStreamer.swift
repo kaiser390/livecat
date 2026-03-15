@@ -20,6 +20,7 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
     private var frameCount: UInt64 = 0
     private var audioFrameCount: UInt64 = 0
     private let startTime = CFAbsoluteTimeGetCurrent()
+    private(set) var audioSampleRate: UInt32 = 48000  // updated dynamically from first audio frame
 
     // Serial queue — serializes all state mutations (CC counters, frameCount, etc.)
     private let queue = DispatchQueue(label: "com.livecat.udp", qos: .userInteractive)
@@ -92,7 +93,7 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
     func buildAudioTSData(aacData: Data) -> Data {
         queue.sync {
             // Audio PTS: frame-count based (1024 samples per AAC frame @ 48kHz)
-            let pts = audioFrameCount * UInt64(1024 * 90000 / 48000)
+            let pts = audioFrameCount * UInt64(1024 * 90000 / max(audioSampleRate, 1))
             var pesPacket = Data()
             pesPacket.append(contentsOf: [0x00, 0x00, 0x01])
             pesPacket.append(0xC0)
@@ -105,6 +106,10 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
             audioFrameCount += 1
             return muxIntoTS(pesData: pesPacket, pid: audioPid, isKeyframe: false, cc: &audioCc)
         }
+    }
+
+    func setAudioSampleRate(_ rate: UInt32) {
+        queue.sync { audioSampleRate = rate }
     }
 
     func write(encodedData: Data, isKeyframe: Bool = false) {
@@ -305,7 +310,7 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
             guard isActive, let connection else { return }
 
             // Audio PTS: frame-count based (1024 samples per AAC frame @ 48kHz)
-            let pts = audioFrameCount * UInt64(1024 * 90000 / 48000)
+            let pts = audioFrameCount * UInt64(1024 * 90000 / max(audioSampleRate, 1))
 
             var pesPacket = Data()
             pesPacket.append(contentsOf: [0x00, 0x00, 0x01])

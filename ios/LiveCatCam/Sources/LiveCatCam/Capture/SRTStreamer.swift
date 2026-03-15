@@ -83,6 +83,10 @@ final class SRTStreamer: @unchecked Sendable, VideoStreaming {
         }
     }
 
+    func setAudioSampleRate(_ rate: UInt32) {
+        muxer.setAudioSampleRate(rate)
+    }
+
     func stop() {
         queue.sync {
             guard isActive else { return }

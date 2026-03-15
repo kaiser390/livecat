@@ -17,6 +17,7 @@ final class AudioEncoder: @unchecked Sendable {
     private var currentInputSize: UInt32 = 0
 
     var onEncodedAudio: ((Data) -> Void)?
+    var onSampleRateDetected: ((UInt32) -> Void)?
     private var frameCount: UInt64 = 0
 
     // Serial queue — serializes encode() and stop() so AudioConverterDispose
@@ -94,6 +95,7 @@ final class AudioEncoder: @unchecked Sendable {
         inputBytesPerFrame = inputFormat.mBytesPerFrame
 
         Log.streaming.info("[AUDIO] Input: \(self.sampleRate)Hz \(self.channels)ch \(inputFormat.mBitsPerChannel)bit bpf=\(self.inputBytesPerFrame) flags=\(inputFormat.mFormatFlags)")
+        onSampleRateDetected?(UInt32(sampleRate))
 
         var inputDesc = inputFormat
         var outputDesc = AudioStreamBasicDescription(

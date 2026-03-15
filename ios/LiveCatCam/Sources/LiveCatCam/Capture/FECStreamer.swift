@@ -77,6 +77,10 @@ final class FECStreamer: @unchecked Sendable, VideoStreaming {
         }
     }
 
+    func setAudioSampleRate(_ rate: UInt32) {
+        muxer.setAudioSampleRate(rate)
+    }
+
     func stop() {
         queue.sync {
             isActive = false

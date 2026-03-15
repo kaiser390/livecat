@@ -37,6 +37,7 @@ final class AppState {
     var currentFPS: Double = 0
     var isConnected = false
     var isStreaming = false
+    var audioSampleRate: UInt32 = 0
     var catCount = 0
     var motorPan: Double = 180
     var motorTilt: Double = 0
@@ -218,6 +219,11 @@ final class AppState {
         addDebug("Wiring audio...")
         let encoder = AudioEncoder()
         audioEncoder = encoder
+        encoder.onSampleRateDetected = { [weak self] rate in
+            self?.srtStreamer?.setAudioSampleRate(rate)
+            Task { @MainActor in self?.audioSampleRate = rate }
+            self?.addDebug("Audio: \(rate)Hz")
+        }
         encoder.onEncodedAudio = { aacData in
             streamer?.writeAudio(aacData: aacData)
         }

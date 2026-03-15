@@ -6,4 +6,5 @@ protocol VideoStreaming: AnyObject, Sendable {
     func write(encodedData: Data, isKeyframe: Bool)
     func writeAudio(aacData: Data)
     func stop()
+    func setAudioSampleRate(_ rate: UInt32)
 }
