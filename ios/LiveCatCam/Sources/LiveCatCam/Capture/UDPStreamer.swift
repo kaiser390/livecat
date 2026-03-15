@@ -91,8 +91,8 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
     /// Build MPEG-TS data for an audio frame (used by FECStreamer / SRTStreamer)
     func buildAudioTSData(aacData: Data) -> Data {
         queue.sync {
-            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-            let pts = UInt64(elapsed * 90000)
+            // Audio PTS: frame-count based (1024 samples per AAC frame @ 48kHz)
+            let pts = audioFrameCount * UInt64(1024 * 90000 / 48000)
             var pesPacket = Data()
             pesPacket.append(contentsOf: [0x00, 0x00, 0x01])
             pesPacket.append(0xC0)
@@ -304,9 +304,8 @@ final class UDPStreamer: @unchecked Sendable, VideoStreaming {
         queue.async { [self] in
             guard isActive, let connection else { return }
 
-            // Audio PTS: wall-clock based (AAC frames don't have stable frame count)
-            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-            let pts = UInt64(elapsed * 90000)
+            // Audio PTS: frame-count based (1024 samples per AAC frame @ 48kHz)
+            let pts = audioFrameCount * UInt64(1024 * 90000 / 48000)
 
             var pesPacket = Data()
             pesPacket.append(contentsOf: [0x00, 0x00, 0x01])
