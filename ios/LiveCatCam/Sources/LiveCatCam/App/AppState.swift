@@ -26,7 +26,7 @@ final class AppState {
     private(set) var serverConnection: ServerConnection?
     private(set) var metadataReporter: MetadataReporter?
     private(set) var videoEncoder: VideoEncoder?
-    private(set) var srtStreamer: (any VideoStreaming)?
+    private(set) var activeStreamer: (any VideoStreaming)?
     private(set) var motorController: (any MotorControlling)?
     private(set) var audioCapture = AudioCapture()
     private(set) var audioEncoder: AudioEncoder?
@@ -171,18 +171,18 @@ final class AppState {
         addDebug("START tapped")
 
         // Ensure streamer exists (fixes cold-start nil issue)
-        if srtStreamer == nil {
+        if activeStreamer == nil {
             switch config.streamProtocol {
-            case .udp: srtStreamer = UDPStreamer(config: config)
-            // case .fec: srtStreamer = FECStreamer(config: config)  // Reserved
-            case .srt: srtStreamer = SRTStreamer(config: config)
+            case .udp: activeStreamer = UDPStreamer(config: config)
+            // case .fec: activeStreamer = FECStreamer(config: config)  // Reserved
+            case .srt: activeStreamer = SRTStreamer(config: config)
             }
             addDebug("Streamer created: \(config.streamProtocol.rawValue)")
         }
 
         // Wire up video encoding → UDP (thread-safe: capture local ref)
         addDebug("Wiring encoder → UDP...")
-        let streamer = srtStreamer
+        let streamer = activeStreamer
         var callbackCount: UInt64 = 0
         videoEncoder?.onEncodedData = { [weak self] data, isKeyframe in
             callbackCount += 1
@@ -208,7 +208,7 @@ final class AppState {
         // Start UDP streamer
         addDebug("Starting UDP...")
         do {
-            try srtStreamer?.start()
+            try activeStreamer?.start()
             isStreaming = true
             addDebug("UDP OK → \(config.serverIP):\(config.srtPort)")
         } catch {
@@ -220,7 +220,7 @@ final class AppState {
         let encoder = AudioEncoder()
         audioEncoder = encoder
         encoder.onSampleRateDetected = { [weak self] rate in
-            self?.srtStreamer?.setAudioSampleRate(rate)
+            self?.activeStreamer?.setAudioSampleRate(rate)
             Task { @MainActor in self?.audioSampleRate = rate }
             self?.addDebug("Audio: \(rate)Hz")
         }
@@ -258,7 +258,7 @@ final class AppState {
         audioEncoder?.stop()
         audioCapture.onAudioBuffer = nil
         audioEncoder = nil
-        srtStreamer?.stop()
+        activeStreamer?.stop()
         isStreaming = false
         await metadataReporter?.stop()
         await serverConnection?.disconnect()
@@ -274,11 +274,11 @@ final class AppState {
         let wasLive = isLive
         if wasLive { await stopStreaming() }
         // Stop previous streamer before replacing (clean up old connection)
-        srtStreamer?.stop()
+        activeStreamer?.stop()
         switch config.streamProtocol {
-        case .udp: srtStreamer = UDPStreamer(config: config)
-        // case .fec: srtStreamer = FECStreamer(config: config)  // Reserved
-        case .srt: srtStreamer = SRTStreamer(config: config)
+        case .udp: activeStreamer = UDPStreamer(config: config)
+        // case .fec: activeStreamer = FECStreamer(config: config)  // Reserved
+        case .srt: activeStreamer = SRTStreamer(config: config)
         }
         let connection = ServerConnection(config: config)
         serverConnection = connection
@@ -337,9 +337,9 @@ final class AppState {
             bitrate: config.bitrate
         )
         switch config.streamProtocol {
-        case .udp: srtStreamer = UDPStreamer(config: config)
-        // case .fec: srtStreamer = FECStreamer(config: config)  // Reserved
-        case .srt: srtStreamer = SRTStreamer(config: config)
+        case .udp: activeStreamer = UDPStreamer(config: config)
+        // case .fec: activeStreamer = FECStreamer(config: config)  // Reserved
+        case .srt: activeStreamer = SRTStreamer(config: config)
         }
 
         // Connection state handling
